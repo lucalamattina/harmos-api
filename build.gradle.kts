@@ -46,6 +46,6 @@ tasks.withType<Test> {
 }
 
 application {
-	mainClass.set("ar.edu.itba.HarmosApplication")
+	mainClass.set("ar.edu.itba.HarmosApplicationKt")
 }
 
