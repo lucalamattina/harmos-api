@@ -8,17 +8,11 @@ class Specialty(
     @Column(nullable = false, unique = true)
     val name: String,
 
-    @ManyToMany(mappedBy = "specialties", fetch = FetchType.LAZY)
-    val users: MutableSet<AppUser>,
-
-    @ManyToMany(mappedBy = "specialties", fetch = FetchType.LAZY)
-    val announcements: MutableSet<Announcement>,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
-    constructor() : this("", mutableSetOf(), mutableSetOf())
+    constructor() : this("")
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

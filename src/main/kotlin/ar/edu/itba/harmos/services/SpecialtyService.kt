@@ -12,11 +12,7 @@ class SpecialtyService(private val specialtyRepository: SpecialtyRepository) {
         if (specialtyRepository.findByName(createSpecialtyRequest.name) != null) {
             return null
         }
-        val applicationSpecialty = Specialty(
-            createSpecialtyRequest.name,
-            mutableSetOf(),
-            mutableSetOf(),
-        )
+        val applicationSpecialty = Specialty(createSpecialtyRequest.name)
         return specialtyRepository.save(applicationSpecialty)
     }
 
@@ -34,6 +30,16 @@ class SpecialtyService(private val specialtyRepository: SpecialtyRepository) {
 
     fun getAllSpecialties(): List<Specialty> {
         return specialtyRepository.findAll()
+    }
+
+    fun deletePatientById(id: Long): Boolean {
+        val specialty = specialtyRepository.findById(id)
+        return if (specialty.isPresent) {
+            specialtyRepository.delete(specialty.get())
+            true
+        } else {
+            false
+        }
     }
     
 }

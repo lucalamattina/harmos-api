@@ -49,4 +49,15 @@ class SpecialtyController(
     }
 
 
+
+    @DeleteMapping("/{id}")
+    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
+        return if (specialtyService.deletePatientById(id)) {
+            ResponseEntity(HttpStatus.NO_CONTENT)
+        } else {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
+
+
 }

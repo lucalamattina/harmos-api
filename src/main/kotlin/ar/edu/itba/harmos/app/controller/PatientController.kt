@@ -52,20 +52,14 @@ class PatientController(
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) name: String?
     ): ResponseEntity<Any> {
-        return if (!name.isNullOrEmpty()) {
-            val patient = patientService.getPatientByName(name)
-            if (patient != null) {
-                ResponseEntity(PatientResponse.singleFromModel(patient), HttpStatus.OK)
-            //TODO: No buscar por nombre especifico si no por contains(usar like sql)
-            } else {
-                ResponseEntity(HttpStatus.NOT_FOUND)
-            }
+        val pageable = PageRequest.of(page, size)
+        val patients = if (!name.isNullOrEmpty()) {
+            patientService.getPatientsContainingName(name, pageable)
         } else {
-            val pageable: Pageable = PageRequest.of(page, size)
-            val patients = patientService.getPatients(pageable)
-            val response = patients.map { PatientResponse.singleFromModel(it) } // Mapea todos los pacientes
-            ResponseEntity(response, HttpStatus.OK)
+            patientService.getPatients(pageable)
         }
+        val response = patients.map { PatientResponse.singleFromModel(it) }
+        return ResponseEntity.ok(response)
     }
 
 

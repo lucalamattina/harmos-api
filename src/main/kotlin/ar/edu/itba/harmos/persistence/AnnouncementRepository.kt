@@ -12,6 +12,6 @@ import org.springframework.data.domain.Pageable
 interface AnnouncementRepository : PagingAndSortingRepository<Announcement, Long> {
     fun findByCreatedBy(appUser: AppUser, pageable: Pageable): Page<Announcement>
 
-    fun findBySpecialtiesIn(specialties: List<String>, pageable: Pageable): List<Announcement>
+    fun findBySpecialtiesIn(specialties: List<String>, pageable: Pageable): Page<Announcement>
 
 }

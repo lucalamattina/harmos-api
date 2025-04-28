@@ -38,7 +38,8 @@ class AnnouncementController(
         @RequestParam(required = false) specialties: List<String>?
     ): ResponseEntity<Any> {
         val announcements = announcementService.searchAnnouncementsByPage(page, size, specialties)
-        return ResponseEntity(AnnouncementResponse.listFromModel(announcements), HttpStatus.OK)
+        val response = announcements.map { AnnouncementResponse.singleFromModel(it) }
+        return ResponseEntity.ok(response)
     }
 
 

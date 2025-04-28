@@ -4,9 +4,11 @@ import ar.edu.itba.harmos.dtos.responses.AppUserResponse
 import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.ScheduleResponse
+import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.services.AnnouncementService
 import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.ScheduleService
+import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -55,27 +57,16 @@ class UserController(
         return ResponseEntity(ScheduleResponse.setFromModel(schedules), HttpStatus.OK)
     }
 
-    //TODO: GET ALL USERS(ADMIN PAGE) PAgearlo
     //TODO: DELETE USER
     @GetMapping()
-    @ResponseBody
-    fun findAll(
-        @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "10") size: Int,
-        @RequestParam(required = false) specialties: List<String>?,
+    fun getUsers(
         @RequestParam(required = false) email: String?,
-        @RequestParam(required = false) id: Long?
-    ): ResponseEntity<Any> {
-        val users = when {
-            !specialties.isNullOrEmpty() && (id != null || email != null) ->
-                appUserService.findUserBySpecialtyAndIdOrEmail(specialties, id, email)
-            !specialties.isNullOrEmpty() ->
-                appUserService.findUsersBySpecialties(specialties, page, size)
-            id != null || email != null ->
-                appUserService.findUserByIdOrEmail(id, email)
-            else -> appUserService.findAllUsers(page, size)
-        }
-        return ResponseEntity(AppUserResponse.listFromModel(users), HttpStatus.OK)
+        @RequestParam(required = false) specialties: List<String>?,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int
+    ): ResponseEntity<Page<AppUserResponse>> {
+        val usersPage = appUserService.findAppUsersByEmailAndSpecialties(email, specialties, page, size)
+        return ResponseEntity.ok(AppUserResponse.pageFromModel(usersPage))
     }
 
 

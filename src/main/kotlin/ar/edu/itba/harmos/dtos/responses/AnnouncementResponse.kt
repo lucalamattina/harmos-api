@@ -1,6 +1,7 @@
 package ar.edu.itba.harmos.dtos.responses
 
 import ar.edu.itba.harmos.models.Announcement
+import ar.edu.itba.harmos.models.Specialty
 import java.time.LocalDateTime
 
 data class AnnouncementResponse(
@@ -8,8 +9,9 @@ data class AnnouncementResponse(
     val title: String,
     val content: String,
     val date: LocalDateTime,
-    val createdByUserId: Long
-) {
+    val createdByUserId: Long,
+    val specialties: List<Specialty>)
+{
     companion object {
         fun singleFromModel(announcement: Announcement) : AnnouncementResponse {
             return AnnouncementResponse(
@@ -18,6 +20,7 @@ data class AnnouncementResponse(
                 announcement.content,
                 announcement.date,
                 announcement.createdBy.id,
+                announcement.specialties.toList()
             )
         }
         fun listFromModel(announcements: List<Announcement>): List<AnnouncementResponse> {

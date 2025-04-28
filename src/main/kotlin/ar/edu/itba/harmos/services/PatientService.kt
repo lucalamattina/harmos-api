@@ -28,6 +28,10 @@ class PatientService( private val patientRepository: PatientRepository,
         return patientRepository.save(patient)
     }
 
+    fun getPatientsContainingName(name: String, pageable: Pageable): Page<Patient> {
+        return patientRepository.findByNameContainingIgnoreCase(name, pageable)
+    }
+
     fun getPatientByName(name: String): Patient? {
         return patientRepository.findByName(name)
     }

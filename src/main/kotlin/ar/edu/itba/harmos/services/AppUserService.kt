@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 
 @Service
 class AppUserService(
@@ -70,5 +71,15 @@ class AppUserService(
             email != null -> appUserRepository.findByEmail(email)?.let { listOf(it) } ?: emptyList()  //TODO:QUE DEVUELVA CHEQUENADO que sean iguales
             else -> emptyList()
         }
+    }
+
+    fun findAppUsersByEmailAndSpecialties(
+        email: String? = null,
+        specialties: List<String>? = null,
+        page: Int = 0,
+        size: Int = 10
+    ): Page<AppUser> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        return appUserRepository.findAppUsersByEmailAndSpecialties(email, specialties, pageable)
     }
 }
