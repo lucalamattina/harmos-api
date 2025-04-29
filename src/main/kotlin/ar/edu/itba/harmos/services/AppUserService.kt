@@ -82,4 +82,14 @@ class AppUserService(
         val pageable: Pageable = PageRequest.of(page, size)
         return appUserRepository.findAppUsersByEmailAndSpecialties(email, specialties, pageable)
     }
+
+    fun deleteUserById(id: Long): Boolean {
+        val user = appUserRepository.findById(id)
+        return if (user.isPresent) {
+            appUserRepository.delete(user.get())
+            true
+        } else {
+            false
+        }
+    }
 }

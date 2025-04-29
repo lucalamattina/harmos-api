@@ -69,5 +69,13 @@ class UserController(
         return ResponseEntity.ok(AppUserResponse.pageFromModel(usersPage))
     }
 
+    @DeleteMapping("/{id}")
+    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
+        return if (appUserService.deleteUserById(id)) {
+            ResponseEntity(HttpStatus.NO_CONTENT)
+        } else {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
 
 }

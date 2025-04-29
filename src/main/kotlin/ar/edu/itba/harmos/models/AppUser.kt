@@ -21,6 +21,10 @@ class AppUser (
 
     @ManyToMany(fetch = FetchType.EAGER)
     val roles: Set<Role>,
+
+    @OneToMany(mappedBy = "createdBy", cascade = [CascadeType.REMOVE], orphanRemoval = true)
+    val announcements: List<Announcement> = mutableListOf(),
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
