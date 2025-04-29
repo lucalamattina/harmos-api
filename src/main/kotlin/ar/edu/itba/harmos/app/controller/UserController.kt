@@ -78,4 +78,16 @@ class UserController(
         }
     }
 
+    @PostMapping("/{userId}/specialties/{specialtyId}")
+    fun addSpecialtyToUser(
+        @PathVariable userId: Long,
+        @PathVariable specialtyId: Long
+    ): ResponseEntity<Any> {
+        return if (appUserService.addSpecialtyToUser(userId, specialtyId)) {
+            ResponseEntity(HttpStatus.NO_CONTENT)
+        } else {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
+
 }

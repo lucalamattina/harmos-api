@@ -51,8 +51,6 @@ class AppUserService(
     }
 
 
-    //TODO:NO ES COONTENT O PAGABLE
-
     fun findUsersBySpecialties(specialties: List<String>, page: Int, size: Int): List<AppUser> {
         return appUserRepository.findBySpecialtiesIn(specialties, PageRequest.of(page, size))
     }
@@ -91,5 +89,14 @@ class AppUserService(
         } else {
             false
         }
+    }
+
+    fun addSpecialtyToUser(userId: Long, specialtyId: Long): Boolean {
+        val user = appUserRepository.findById(userId).orElse(null) ?: return false
+        val specialty = specialtyService.getSpecialtyById(specialtyId) ?: return false
+
+        user.specialties.add(specialty)
+        appUserRepository.save(user)
+        return true
     }
 }

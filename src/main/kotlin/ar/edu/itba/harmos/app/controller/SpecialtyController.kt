@@ -49,6 +49,13 @@ class SpecialtyController(
         } else ResponseEntity(HttpStatus.NOT_FOUND)
     }
 
+    @GetMapping
+    @ResponseBody
+    fun getAll(): ResponseEntity<Any> {
+        val specialties = specialtyService.getAllSpecialties()
+        return ResponseEntity(SpecialtyResponse.listFromModel(specialties), HttpStatus.OK)
+    }
+
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: Long): ResponseEntity<Any> {
         return if (specialtyService.deletePatientById(id)) {
