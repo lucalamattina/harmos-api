@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.springframework.dao.DataIntegrityViolationException
 
 @Validated
 @RestController
@@ -48,8 +49,6 @@ class SpecialtyController(
         } else ResponseEntity(HttpStatus.NOT_FOUND)
     }
 
-
-
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: Long): ResponseEntity<Any> {
         return if (specialtyService.deletePatientById(id)) {
@@ -59,5 +58,11 @@ class SpecialtyController(
         }
     }
 
-
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDataIntegrityViolationException(ex: DataIntegrityViolationException): ResponseEntity<Map<String, String>> {
+        val response = mutableMapOf<String, String>()
+        response["error"] = "Cannot delete specialty because it is still in use."
+        response["details"] = "This specialty is referenced by one or more announcements. Please remove or update those references before deleting the specialty."
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response)
+    }
 }
