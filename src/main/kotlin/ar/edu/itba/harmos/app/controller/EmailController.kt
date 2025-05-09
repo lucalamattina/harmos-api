@@ -1,4 +1,4 @@
-package ar.edu.itba.harmos.controller
+package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.requests.EmailRequest
 import ar.edu.itba.harmos.dtos.responses.EmailResponse
@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/messages")
+@RequestMapping("/messages")
 class EmailController @Autowired constructor(
     private val emailService: EmailService
 ) {
