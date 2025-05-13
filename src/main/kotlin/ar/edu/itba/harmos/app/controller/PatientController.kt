@@ -63,9 +63,9 @@ class PatientController(
     }
 
 
-    @PostMapping("/{patientId}/users/{userId}")
-    fun addUserToPatient(@PathVariable patientId: Long, @PathVariable userId: Long): ResponseEntity<Any> {
-        return if (patientService.addUserToPatient(patientId, userId)) {
+    @PostMapping("/{patientId}/doctors/{doctorId}") //TODO: cambiar Doctors por users?
+    fun addDoctorToPatient(@PathVariable patientId: Long, @PathVariable doctorId: Long): ResponseEntity<Any> {
+        return if (patientService.addDoctorToPatient(patientId, doctorId)) {
             ResponseEntity(HttpStatus.NO_CONTENT)
         } else {
             ResponseEntity(HttpStatus.NOT_FOUND)
