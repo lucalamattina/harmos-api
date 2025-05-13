@@ -8,6 +8,7 @@ import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.services.AnnouncementService
 import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.ScheduleService
+import ar.edu.itba.harmos.services.SpecialtyService
 import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,7 +21,8 @@ import org.springframework.web.bind.annotation.*
 class UserController(
     private val appUserService: AppUserService,
     private val announcementService: AnnouncementService,
-    private val scheduleService: ScheduleService
+    private val scheduleService: ScheduleService,
+    private val specialtyService: SpecialtyService
 ) {
 
     @PostMapping()
@@ -57,16 +59,19 @@ class UserController(
         return ResponseEntity(ScheduleResponse.setFromModel(schedules), HttpStatus.OK)
     }
 
-    //TODO: DELETE USER
-    @GetMapping()
+    @GetMapping
     fun getUsers(
         @RequestParam(required = false) email: String?,
+        @RequestParam(required = false) name: String?,
         @RequestParam(required = false) specialties: List<String>?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
-    ): ResponseEntity<Page<AppUserResponse>> {
-        val usersPage = appUserService.findAppUsersByEmailAndSpecialties(email, specialties, page, size)
-        return ResponseEntity.ok(AppUserResponse.pageFromModel(usersPage))
+    ): ResponseEntity<Page<AppUser>> {
+        val specialtiesList = specialties?.mapNotNull { specialtyName ->
+            specialtyService.getSpecialtyByName(specialtyName)
+        }
+        val users = appUserService.findAppUsersByEmailAndSpecialties(email, name, specialtiesList, page, size)
+        return ResponseEntity.ok(users)
     }
 
     @DeleteMapping("/{id}")

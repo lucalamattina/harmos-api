@@ -29,6 +29,9 @@ class AppUser (
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
+    val name: String
+        get() = "$firstName $lastName"
+
     constructor() : this("","","","","", mutableSetOf(), emptySet())
 
     override fun equals(other: Any?): Boolean {

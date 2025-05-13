@@ -2,6 +2,7 @@ package ar.edu.itba.harmos.services
 
 import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
 import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.models.Specialty
 import ar.edu.itba.harmos.persistence.AppUserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -72,13 +73,14 @@ class AppUserService(
     }
 
     fun findAppUsersByEmailAndSpecialties(
-        email: String? = null,
-        specialties: List<String>? = null,
-        page: Int = 0,
-        size: Int = 10
+        email: String?,
+        name: String?,
+        specialties: List<Specialty>?,
+        page: Int,
+        size: Int
     ): Page<AppUser> {
-        val pageable: Pageable = PageRequest.of(page, size)
-        return appUserRepository.findAppUsersByEmailAndSpecialties(email, specialties, pageable)
+        val pageable = PageRequest.of(page, size)
+        return appUserRepository.findAppUsersByEmailAndSpecialties(email, name, specialties, pageable)
     }
 
     fun deleteUserById(id: Long): Boolean {
