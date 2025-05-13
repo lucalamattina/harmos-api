@@ -16,15 +16,22 @@ import org.springframework.data.domain.Sort
 class PatientService( private val patientRepository: PatientRepository,
                       private val appUserRepository: AppUserRepository) {
 
+    @Transactional
     fun createPatient(createPatientRequest: CreatePatientRequest): Patient? {
         if (patientRepository.findByName(createPatientRequest.name) != null) {
             return null
         }
+
+        // Obtener los usuarios por sus IDs
+        val users = createPatientRequest.userIds.mapNotNull { userId ->
+            appUserRepository.findById(userId).orElse(null)
+        }.toMutableList()
+
         val patient = Patient(
             createPatientRequest.name,
             createPatientRequest.phone,
             createPatientRequest.status,
-            mutableListOf(),
+            users,
             emptyList()
         )
         return patientRepository.save(patient)
@@ -63,20 +70,20 @@ class PatientService( private val patientRepository: PatientRepository,
     }
 
     @Transactional
-    fun addDoctorToPatient(patientId: Long, doctorId: Long): Boolean {
+    fun addUserToPatient(patientId: Long, userId: Long): Boolean {
         val patientOpt = patientRepository.findById(patientId)
-        val doctorOpt = appUserRepository.findById(doctorId)
+        val userOpt = appUserRepository.findById(userId)
 
-        if (patientOpt.isPresent && doctorOpt.isPresent) {
+        if (patientOpt.isPresent && userOpt.isPresent) {
             val patient = patientOpt.get()
-            val doctor = doctorOpt.get()
+            val user = userOpt.get()
 
-            // Check if doctor is already assigned to the patient
-            if (patient.doctors.contains(doctor)) {
+            // Check if user is already assigned to the patient
+            if (patient.doctors.contains(user)) {
                 return false
             }
 
-            patient.doctors.add(doctor)
+            patient.doctors.add(user)
             patientRepository.save(patient)
             return true
         }
