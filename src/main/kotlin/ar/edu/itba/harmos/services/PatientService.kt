@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 
 @Service
 class PatientService( private val patientRepository: PatientRepository,
@@ -29,7 +31,8 @@ class PatientService( private val patientRepository: PatientRepository,
     }
 
     fun getPatientsContainingName(name: String, pageable: Pageable): Page<Patient> {
-        return patientRepository.findByNameContainingIgnoreCase(name, pageable)
+        val sortedPageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, Sort.by(Sort.Direction.ASC, "name"))
+        return patientRepository.findByNameContainingIgnoreCase(name, sortedPageable)
     }
 
     fun getPatientByName(name: String): Patient? {
@@ -55,7 +58,8 @@ class PatientService( private val patientRepository: PatientRepository,
     }
 
     fun getPatients(pageable: Pageable): Page<Patient> {
-        return patientRepository.findAll(pageable)
+        val sortedPageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, Sort.by(Sort.Direction.ASC, "name"))
+        return patientRepository.findAll(sortedPageable)
     }
 
     @Transactional
