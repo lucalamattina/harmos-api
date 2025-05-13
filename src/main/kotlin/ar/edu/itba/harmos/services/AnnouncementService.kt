@@ -5,6 +5,7 @@ import ar.edu.itba.harmos.models.Announcement
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.persistence.AnnouncementRepository
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.data.domain.Page@Service
 
@@ -33,7 +34,7 @@ class AnnouncementService(
     }
 
     fun searchAnnouncementsByPage(page: Int, offset: Int, specialties: List<String>?): Page<Announcement> {
-        val pageable = PageRequest.of(page, offset)
+        val pageable = PageRequest.of(page, offset, Sort.by(Sort.Direction.DESC, "date"))
         return if (specialties == null) {
             announcementRepository.findAll(pageable)
         } else {
@@ -42,7 +43,7 @@ class AnnouncementService(
     }
 
     fun searchAnnouncementsByCreatedByAndPage(createdBy: AppUser, page: Int, offset: Int): List<Announcement> {
-        val pageable = PageRequest.of(page, offset)
+        val pageable = PageRequest.of(page, offset, Sort.by(Sort.Direction.DESC, "date"))
         val announcementsPage = announcementRepository.findByCreatedBy(createdBy, pageable)
         return announcementsPage.content
     }

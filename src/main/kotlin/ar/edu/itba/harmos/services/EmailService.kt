@@ -1,4 +1,4 @@
-package ar.edu.itba.harmos.service
+package ar.edu.itba.harmos.services
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.mail.SimpleMailMessage

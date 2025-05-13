@@ -2,7 +2,7 @@ package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.requests.EmailRequest
 import ar.edu.itba.harmos.dtos.responses.EmailResponse
-import ar.edu.itba.harmos.service.EmailService
+import ar.edu.itba.harmos.services.EmailService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
