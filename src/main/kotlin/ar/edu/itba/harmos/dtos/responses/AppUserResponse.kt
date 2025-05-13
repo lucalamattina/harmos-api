@@ -7,8 +7,7 @@ import org.springframework.data.domain.Page
 data class AppUserResponse (
     val id: Long,
     val email: String,
-    val firstName: String,
-    val lastName: String,
+    val name: String,
     val phone: String,
     val specialties: List<String>
 ) {
@@ -17,10 +16,9 @@ data class AppUserResponse (
             return AppUserResponse(
                 appUser.id,
                 appUser.email,
-                appUser.firstName,
-                appUser.lastName,
+                appUser.name,
                 appUser.phone,
-                appUser.specialties.map { it.name }.toList() //TODO: IS THIS OK? fixed?
+                appUser.specialties.map { it.name }.toList()
             )
         }
         fun listFromModel(appUsers: List<AppUser>) : List<AppUserResponse> {
