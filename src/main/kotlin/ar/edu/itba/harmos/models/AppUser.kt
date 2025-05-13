@@ -17,7 +17,7 @@ class AppUser (
         joinColumns = [JoinColumn(name = "user_id")],
         inverseJoinColumns = [JoinColumn(name = "specialty_id")]
     )
-    val specialties: MutableSet<Specialty>,
+    var specialties: MutableSet<Specialty> = mutableSetOf(),
 
     @ManyToMany(fetch = FetchType.EAGER)
     val roles: Set<Role>,
@@ -29,7 +29,7 @@ class AppUser (
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
-    constructor() : this("","","","","", mutableSetOf(), emptySet())
+    constructor() : this("","","","","", emptySet())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
