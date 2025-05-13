@@ -2,7 +2,6 @@ package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.requests.CreatePatientRequest
 import ar.edu.itba.harmos.dtos.responses.PatientResponse
-import ar.edu.itba.harmos.dtos.responses.PatientDetailResponse
 import ar.edu.itba.harmos.services.PatientService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -33,7 +32,7 @@ class PatientController(
     fun getById(@PathVariable id: Long): ResponseEntity<Any> {
         val patient = patientService.getPatientById(id)
         return if (patient != null) {
-            ResponseEntity(PatientDetailResponse.fromModel(patient), HttpStatus.OK)
+            ResponseEntity(PatientResponse.singleFromModel(patient), HttpStatus.OK)
         } else ResponseEntity(HttpStatus.NOT_FOUND)
     }
 
@@ -59,7 +58,8 @@ class PatientController(
         } else {
             patientService.getPatients(pageable)
         }
-        return ResponseEntity.ok(PatientResponse.pageFromModel(patients))
+        val response = patients.map { PatientResponse.singleFromModel(it) }
+        return ResponseEntity.ok(response)
     }
 
 
