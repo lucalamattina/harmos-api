@@ -15,7 +15,6 @@ interface AppUserRepository : PagingAndSortingRepository<AppUser, Long> {
         """
         SELECT u FROM AppUser u
         WHERE (:email IS NULL OR u.email LIKE %:email%)
-        AND (:name IS NULL OR LOWER(u.firstName) LIKE LOWER(%:name%) OR LOWER(u.lastName) LIKE LOWER(%:name%))
         AND (:specialties IS NULL OR EXISTS (
             SELECT s FROM u.specialties s WHERE s.name IN :specialties
         ))
@@ -23,7 +22,6 @@ interface AppUserRepository : PagingAndSortingRepository<AppUser, Long> {
     )
     fun findAppUsersByEmailAndSpecialties(
         email: String? = null,
-        name: String? = null,
         specialties: List<String>? = null,
         pageable: Pageable? = null
     ): Page<AppUser>

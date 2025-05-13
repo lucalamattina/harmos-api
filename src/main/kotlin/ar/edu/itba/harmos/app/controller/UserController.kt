@@ -57,15 +57,15 @@ class UserController(
         return ResponseEntity(ScheduleResponse.setFromModel(schedules), HttpStatus.OK)
     }
 
+    //TODO: DELETE USER
     @GetMapping()
     fun getUsers(
         @RequestParam(required = false) email: String?,
-        @RequestParam(required = false) name: String?,
         @RequestParam(required = false) specialties: List<String>?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
     ): ResponseEntity<Page<AppUserResponse>> {
-        val usersPage = appUserService.findAppUsersByEmailAndSpecialties(email, name, specialties, page, size)
+        val usersPage = appUserService.findAppUsersByEmailAndSpecialties(email, specialties, page, size)
         return ResponseEntity.ok(AppUserResponse.pageFromModel(usersPage))
     }
 

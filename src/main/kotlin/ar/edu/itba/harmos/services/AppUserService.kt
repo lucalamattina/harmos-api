@@ -73,13 +73,12 @@ class AppUserService(
 
     fun findAppUsersByEmailAndSpecialties(
         email: String? = null,
-        name: String? = null,
         specialties: List<String>? = null,
         page: Int = 0,
         size: Int = 10
     ): Page<AppUser> {
         val pageable: Pageable = PageRequest.of(page, size)
-        return appUserRepository.findAppUsersByEmailAndSpecialties(email, name, specialties, pageable)
+        return appUserRepository.findAppUsersByEmailAndSpecialties(email, specialties, pageable)
     }
 
     fun deleteUserById(id: Long): Boolean {
