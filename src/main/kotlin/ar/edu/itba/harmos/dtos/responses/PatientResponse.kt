@@ -6,7 +6,9 @@ data class PatientResponse (
     val id: Long,
     val name: String,
     val phone: String,
-    val status: String
+    val status: String,
+    val doctors: List<String>,
+    val doctorSpecialties: Set<String>
 ) {
     companion object {
         fun singleFromModel(patient: Patient) : PatientResponse {
@@ -14,7 +16,9 @@ data class PatientResponse (
                 patient.id,
                 patient.name,
                 patient.phone,
-                patient.status
+                patient.status,
+                patient.doctors.map { it.name },
+                patient.doctors.flatMap { it.specialties }.map { it.name }.toSet()
             )
         }
     }
