@@ -21,11 +21,17 @@ interface AppUserRepository : PagingAndSortingRepository<AppUser, Long> {
             SELECT 1 FROM u.specialties s 
             WHERE s IN :specialties
         ))
+        AND (:patientId IS NULL OR NOT EXISTS (
+            SELECT 1 FROM Patient p 
+            JOIN p.doctors d 
+            WHERE p.id = :patientId AND d.id = u.id
+        ))
     """)
     fun findAppUsersByEmailAndSpecialties(
         @Param("email") email: String?,
         @Param("name") name: String?,
         @Param("specialties") specialties: List<Specialty>?,
+        @Param("patientId") patientId: Long?,
         pageable: Pageable
     ): Page<AppUser>
 

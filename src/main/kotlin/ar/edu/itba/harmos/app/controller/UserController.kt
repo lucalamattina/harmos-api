@@ -64,13 +64,14 @@ class UserController(
         @RequestParam(required = false) email: String?,
         @RequestParam(required = false) name: String?,
         @RequestParam(required = false) specialties: List<String>?,
+        @RequestParam(required = false) patientId: Long?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
     ): ResponseEntity<Page<AppUserResponse>> {
         val specialtiesList = specialties?.mapNotNull { specialtyName ->
             specialtyService.getSpecialtyByName(specialtyName)
         }
-        val users = appUserService.findAppUsersByEmailAndSpecialties(email, name, specialtiesList, page, size)
+        val users = appUserService.findAppUsersByEmailAndSpecialties(email, name, specialtiesList, patientId, page, size)
         return ResponseEntity.ok(users.map { AppUserResponse.singleFromModel(it) })
     }
 
