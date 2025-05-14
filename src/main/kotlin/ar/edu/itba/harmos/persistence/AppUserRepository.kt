@@ -22,9 +22,8 @@ interface AppUserRepository : PagingAndSortingRepository<AppUser, Long> {
             WHERE s IN :specialties
         ))
         AND (:patientId IS NULL OR NOT EXISTS (
-            SELECT 1 FROM Patient p 
-            JOIN p.doctors d 
-            WHERE p.id = :patientId AND d.id = u.id
+            SELECT 1 FROM patient_doctor pd 
+            WHERE pd.doctor_id = u.id
         ))
     """)
     fun findAppUsersByEmailAndSpecialties(
