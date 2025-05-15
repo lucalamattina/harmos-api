@@ -3,6 +3,7 @@ package ar.edu.itba.harmos.app.controller
 import ar.edu.itba.harmos.dtos.requests.CreatePatientRequest
 import ar.edu.itba.harmos.dtos.responses.PatientResponse
 import ar.edu.itba.harmos.services.PatientService
+import ar.edu.itba.harmos.services.AppUserService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/patients")
 class PatientController(
     private val patientService: PatientService,
+    private val appUserService: AppUserService
 ) {
 
     @PostMapping()
