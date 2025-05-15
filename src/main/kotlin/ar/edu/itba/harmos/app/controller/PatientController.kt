@@ -65,10 +65,19 @@ class PatientController(
 
     @PostMapping("/{patientId}/doctors/{doctorId}") //TODO: cambiar Doctors por users?
     fun addDoctorToPatient(@PathVariable patientId: Long, @PathVariable doctorId: Long): ResponseEntity<Any> {
+        val patient = patientService.getPatientById(patientId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+        val doctor = appUserService.getAppUserById(doctorId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+        
+        // Si el doctor ya está asignado, devolvemos NO_CONTENT
+        if (patient.doctors.contains(doctor)) {
+            return ResponseEntity(HttpStatus.NO_CONTENT)
+        }
+        
+        // Si no está asignado, intentamos agregarlo
         return if (patientService.addDoctorToPatient(patientId, doctorId)) {
             ResponseEntity(HttpStatus.NO_CONTENT)
         } else {
-            ResponseEntity(HttpStatus.NOT_FOUND)
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 
