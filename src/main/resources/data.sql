@@ -1,0 +1,207 @@
+-- Limpiar tablas existentes (en orden inverso a las dependencias)
+DELETE FROM user_specialty;
+DELETE FROM patient_doctor;
+DELETE FROM announcement_specialty;
+DELETE FROM announcement;
+DELETE FROM schedule;
+DELETE FROM patients;
+DELETE FROM users_roles;
+DELETE FROM users;
+DELETE FROM specialties;
+DELETE FROM roles;
+
+-- Insertar roles
+INSERT INTO roles (id, role) VALUES
+(1, 'ROLE_DOCTOR'),
+(2, 'ROLE_ADMIN');
+
+-- Insertar especialidades
+INSERT INTO specialties (id, name) VALUES
+(1, 'TO'),
+(2, 'FONO'),
+(3, 'KINE'),
+(4, 'PSICO'),
+(5, 'FISIO');
+
+-- Insertar usuarios (doctores)
+INSERT INTO users (id, email, password, first_name, last_name, phone) VALUES
+(1, 'doctor1@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Juan', 'Pérez', '1234567890'),
+(2, 'doctor2@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'María', 'González', '0987654321'),
+(3, 'doctor3@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Carlos', 'Rodríguez', '5555555555'),
+(4, 'doctor4@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Laura', 'Martínez', '1112223333'),
+(5, 'doctor5@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Pedro', 'Sánchez', '4445556666'),
+(6, 'doctor6@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Ana', 'López', '7778889999'),
+(7, 'doctor7@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Miguel', 'Torres', '1231231234'),
+(8, 'doctor8@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Sofía', 'Ramírez', '4564564567'),
+(9, 'doctor9@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Diego', 'Gómez', '7897897890'),
+(10, 'doctor10@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Valentina', 'Herrera', '3213213210'),
+(11, 'doctor11@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Lucas', 'Fernández', '6546546543'),
+(12, 'doctor12@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Camila', 'Díaz', '9879879876'),
+(13, 'doctor13@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Matías', 'Moreno', '1471471478'),
+(14, 'doctor14@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Isabella', 'Castro', '2582582589'),
+(15, 'doctor15@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Santiago', 'Ortiz', '3693693690'),
+(16, 'doctor16@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Martina', 'Silva', '7417417412'),
+(17, 'doctor17@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Facundo', 'Méndez', '8528528523'),
+(18, 'doctor18@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Agustina', 'Ríos', '9639639634'),
+(19, 'doctor19@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Tomás', 'Navarro', '1591591596'),
+(20, 'doctor20@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Lucía', 'Morales', '3573573578'),
+(21, 'doctor21@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Benjamín', 'Flores', '4564564567'),
+(22, 'doctor22@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Emma', 'Vargas', '5675675678'),
+(23, 'doctor23@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Nicolás', 'Cordero', '6786786789'),
+(24, 'doctor24@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Victoria', 'Paredes', '7897897890'),
+(25, 'doctor25@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Joaquín', 'Miranda', '8908908901'),
+(26, 'doctor26@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Catalina', 'Soto', '9019019012'),
+(27, 'doctor27@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Emiliano', 'Cortés', '0120120123'),
+(28, 'doctor28@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Renata', 'Fuentes', '1231231234'),
+(29, 'doctor29@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Maximiliano', 'Valenzuela', '2342342345'),
+(30, 'doctor30@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Antonella', 'Araya', '3453453456');
+
+-- Asignar roles a usuarios
+INSERT INTO users_roles (app_user_id, roles_id) VALUES
+(1, 1), (2, 1), (3, 1), (4, 1), (5, 1),
+(6, 1), (7, 1), (8, 1), (9, 1), (10, 1),
+(11, 1), (12, 1), (13, 1), (14, 1), (15, 1),
+(16, 1), (17, 1), (18, 1), (19, 1), (20, 1),
+(21, 1), (22, 1), (23, 1), (24, 1), (25, 1),
+(26, 1), (27, 1), (28, 1), (29, 1), (30, 1);
+
+-- Asignar especialidades a usuarios (distribuidas aleatoriamente)
+INSERT INTO user_specialty (user_id, specialty_id) VALUES
+(1, 1), (1, 2), (2, 3), (2, 4), (3, 5),
+(4, 1), (4, 3), (5, 2), (5, 4), (6, 5),
+(7, 1), (7, 5), (8, 2), (8, 3), (9, 4),
+(10, 5), (10, 1), (11, 2), (11, 4), (12, 3),
+(13, 5), (13, 2), (14, 1), (14, 3), (15, 4),
+(16, 5), (16, 1), (17, 2), (17, 3), (18, 4),
+(19, 5), (19, 2), (20, 1), (20, 4), (21, 3),
+(22, 5), (22, 1), (23, 2), (23, 3), (24, 4),
+(25, 5), (25, 2), (26, 1), (26, 4), (27, 3),
+(28, 5), (28, 1), (29, 2), (29, 3), (30, 4);
+
+-- Insertar pacientes (50 pacientes)
+INSERT INTO patients (id, name, phone, status) VALUES
+(1, 'Ana Martínez', '1111111111', 'ACTIVE'),
+(2, 'Pedro López', '2222222222', 'ACTIVE'),
+(3, 'Laura Sánchez', '3333333333', 'ACTIVE'),
+(4, 'Miguel Torres', '4444444444', 'ACTIVE'),
+(5, 'Sofía Ramírez', '5555555555', 'ACTIVE'),
+(6, 'Carlos Gómez', '6666666666', 'ACTIVE'),
+(7, 'María Rodríguez', '7777777777', 'ACTIVE'),
+(8, 'Juan Pérez', '8888888888', 'ACTIVE'),
+(9, 'Lucía Fernández', '9999999999', 'ACTIVE'),
+(10, 'Diego González', '1010101010', 'ACTIVE'),
+(11, 'Valentina Silva', '1111111112', 'ACTIVE'),
+(12, 'Lucas Díaz', '1212121212', 'ACTIVE'),
+(13, 'Camila Castro', '1313131313', 'ACTIVE'),
+(14, 'Matías Ortiz', '1414141414', 'ACTIVE'),
+(15, 'Isabella Moreno', '1515151515', 'ACTIVE'),
+(16, 'Santiago Ríos', '1616161616', 'ACTIVE'),
+(17, 'Martina Méndez', '1717171717', 'ACTIVE'),
+(18, 'Facundo Vargas', '1818181818', 'ACTIVE'),
+(19, 'Agustina Flores', '1919191919', 'ACTIVE'),
+(20, 'Tomás Cordero', '2020202020', 'ACTIVE'),
+(21, 'Lucía Paredes', '2121212121', 'ACTIVE'),
+(22, 'Benjamín Miranda', '2222222223', 'ACTIVE'),
+(23, 'Emma Soto', '2323232323', 'ACTIVE'),
+(24, 'Nicolás Cortés', '2424242424', 'ACTIVE'),
+(25, 'Victoria Fuentes', '2525252525', 'ACTIVE'),
+(26, 'Joaquín Valenzuela', '2626262626', 'ACTIVE'),
+(27, 'Catalina Araya', '2727272727', 'ACTIVE'),
+(28, 'Emiliano Morales', '2828282828', 'ACTIVE'),
+(29, 'Renata Navarro', '2929292929', 'ACTIVE'),
+(30, 'Maximiliano Silva', '3030303030', 'ACTIVE'),
+(31, 'Antonella Díaz', '3131313131', 'ACTIVE'),
+(32, 'Santiago Castro', '3232323232', 'ACTIVE'),
+(33, 'Martina Ortiz', '3333333334', 'ACTIVE'),
+(34, 'Facundo Moreno', '3434343434', 'ACTIVE'),
+(35, 'Agustina Ríos', '3535353535', 'ACTIVE'),
+(36, 'Tomás Méndez', '3636363636', 'ACTIVE'),
+(37, 'Lucía Vargas', '3737373737', 'ACTIVE'),
+(38, 'Benjamín Flores', '3838383838', 'ACTIVE'),
+(39, 'Emma Cordero', '3939393939', 'ACTIVE'),
+(40, 'Nicolás Paredes', '4040404040', 'ACTIVE'),
+(41, 'Victoria Miranda', '4141414141', 'ACTIVE'),
+(42, 'Joaquín Soto', '4242424242', 'ACTIVE'),
+(43, 'Catalina Cortés', '4343434343', 'ACTIVE'),
+(44, 'Emiliano Fuentes', '4444444445', 'ACTIVE'),
+(45, 'Renata Valenzuela', '4545454545', 'ACTIVE'),
+(46, 'Maximiliano Araya', '4646464646', 'ACTIVE'),
+(47, 'Antonella Morales', '4747474747', 'ACTIVE'),
+(48, 'Santiago Navarro', '4848484848', 'ACTIVE'),
+(49, 'Martina Silva', '4949494949', 'ACTIVE'),
+(50, 'Facundo Díaz', '5050505050', 'ACTIVE');
+
+-- Asignar doctores a pacientes (cada paciente tiene 1-3 doctores)
+INSERT INTO patient_doctor (patient_id, doctor_id) VALUES
+(1, 1), -- Ana Martínez - Juan Pérez
+(1, 2), -- Ana Martínez - María González
+(2, 1), -- Pedro López - Juan Pérez
+(3, 2), -- Laura Sánchez - María González
+(4, 3), -- Miguel Torres - Carlos Rodríguez
+(5, 3); -- Sofía Ramírez - Carlos Rodríguez
+
+-- Insertar horarios
+INSERT INTO schedule (id, location, day_of_week, hour_from, minute_from, hour_to, minute_to, doctor_id) VALUES
+(1, 'Consultorio 1', 1, 9, 0, 17, 0, 1), -- Lunes
+(2, 'Consultorio 2', 2, 9, 0, 17, 0, 1), -- Martes
+(3, 'Consultorio 3', 3, 9, 0, 17, 0, 2), -- Miércoles
+(4, 'Consultorio 4', 4, 9, 0, 17, 0, 2), -- Jueves
+(5, 'Consultorio 5', 5, 9, 0, 17, 0, 3); -- Viernes
+
+-- Insertar anuncios (25 anuncios)
+INSERT INTO announcement (id, title, content, date, created_by_id) VALUES
+(1, 'Nuevo Equipamiento', 'Se ha adquirido nuevo equipamiento para terapia ocupacional', CURRENT_TIMESTAMP, 1),
+(2, 'Cambio de Horarios', 'A partir de la próxima semana, los horarios de atención serán de 9:00 a 17:00', CURRENT_TIMESTAMP, 2),
+(3, 'Capacitación', 'Próxima capacitación en nuevas técnicas de rehabilitación', CURRENT_TIMESTAMP, 3),
+(4, 'Mantenimiento', 'El consultorio estará cerrado por mantenimiento el próximo fin de semana', CURRENT_TIMESTAMP, 4),
+(5, 'Nuevo Servicio', 'Se ha implementado un nuevo servicio de telemedicina', CURRENT_TIMESTAMP, 5),
+(6, 'Actualización de Protocolos', 'Se han actualizado los protocolos de atención', CURRENT_TIMESTAMP, 6),
+(7, 'Feriado', 'Recordatorio: el próximo lunes es feriado', CURRENT_TIMESTAMP, 7),
+(8, 'Nuevo Personal', 'Se ha incorporado nuevo personal médico', CURRENT_TIMESTAMP, 8),
+(9, 'Mejoras en Instalaciones', 'Se han realizado mejoras en las instalaciones', CURRENT_TIMESTAMP, 9),
+(10, 'Actualización de Software', 'Se ha actualizado el sistema de gestión', CURRENT_TIMESTAMP, 10),
+(11, 'Capacitación Interna', 'Capacitación sobre nuevos procedimientos', CURRENT_TIMESTAMP, 11),
+(12, 'Mantenimiento Preventivo', 'Se realizará mantenimiento preventivo en equipos', CURRENT_TIMESTAMP, 12),
+(13, 'Nuevo Protocolo COVID', 'Actualización de protocolos COVID-19', CURRENT_TIMESTAMP, 13),
+(14, 'Cambio de Ubicación', 'Algunos consultorios cambiarán de ubicación', CURRENT_TIMESTAMP, 14),
+(15, 'Actualización de Tarifas', 'Se han actualizado las tarifas de los servicios', CURRENT_TIMESTAMP, 15),
+(16, 'Nuevo Equipamiento Kinesiología', 'Se ha adquirido nuevo equipamiento para kinesiología', CURRENT_TIMESTAMP, 16),
+(17, 'Capacitación en Fonoaudiología', 'Capacitación en nuevas técnicas de fonoaudiología', CURRENT_TIMESTAMP, 17),
+(18, 'Actualización de Psicología', 'Nuevos enfoques en terapia psicológica', CURRENT_TIMESTAMP, 18),
+(19, 'Mejoras en Fisioterapia', 'Nuevas técnicas de fisioterapia implementadas', CURRENT_TIMESTAMP, 19),
+(20, 'Nuevo Servicio de TO', 'Se ha implementado un nuevo servicio de terapia ocupacional', CURRENT_TIMESTAMP, 20),
+(21, 'Actualización de Equipos', 'Se han actualizado los equipos de diagnóstico', CURRENT_TIMESTAMP, 21),
+(22, 'Nuevo Personal Especializado', 'Se ha incorporado personal especializado en pediatría', CURRENT_TIMESTAMP, 22),
+(23, 'Mejoras en Atención', 'Se han implementado mejoras en la atención al paciente', CURRENT_TIMESTAMP, 23),
+(24, 'Actualización de Procedimientos', 'Se han actualizado los procedimientos de admisión', CURRENT_TIMESTAMP, 24),
+(25, 'Nuevo Servicio de Emergencias', 'Se ha implementado un servicio de emergencias 24/7', CURRENT_TIMESTAMP, 25);
+
+-- Asignar especialidades a anuncios
+INSERT INTO announcement_specialty (announcement_id, specialty_id) VALUES
+(1, 1), -- Nuevo Equipamiento - TO
+(2, 3), -- Cambio de Horarios - KINE
+(2, 4), -- Cambio de Horarios - PSICO
+(3, 5), -- Capacitación - FISIO
+(4, 1), -- Mantenimiento - TO
+(4, 2), -- Mantenimiento - FONO
+(5, 3), -- Nuevo Servicio - KINE
+(6, 4), -- Actualización de Protocolos - PSICO
+(7, 5), -- Feriado - FISIO
+(8, 1), -- Nuevo Personal - TO
+(9, 2), -- Mejoras en Instalaciones - FONO
+(10, 3), -- Actualización de Software - KINE
+(11, 4), -- Capacitación Interna - PSICO
+(12, 5), -- Mantenimiento Preventivo - FISIO
+(13, 1), -- Nuevo Protocolo COVID - TO
+(14, 2), -- Cambio de Ubicación - FONO
+(15, 3), -- Actualización de Tarifas - KINE
+(16, 3), -- Nuevo Equipamiento Kinesiología - KINE
+(17, 2), -- Capacitación en Fonoaudiología - FONO
+(18, 4), -- Actualización de Psicología - PSICO
+(19, 5), -- Mejoras en Fisioterapia - FISIO
+(20, 1), -- Nuevo Servicio de TO - TO
+(21, 3), -- Actualización de Equipos - KINE
+(22, 2), -- Nuevo Personal Especializado - FONO
+(23, 4), -- Mejoras en Atención - PSICO
+(24, 5), -- Actualización de Procedimientos - FISIO
+(25, 1); -- Nuevo Servicio de Emergencias - TO 

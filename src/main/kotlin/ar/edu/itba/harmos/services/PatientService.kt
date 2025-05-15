@@ -55,7 +55,7 @@ class PatientService( private val patientRepository: PatientRepository,
     }
 
     fun getPatients(pageable: Pageable): Page<Patient> {
-        return patientRepository.findAll(pageable)
+        return patientRepository.findAllByOrderByNameAsc(pageable)
     }
 
     @Transactional

@@ -14,4 +14,5 @@ interface PatientRepository : CrudRepository<Patient, Long> {
 
     fun findAll(pageable: Pageable): Page<Patient>
 
+    fun findAllByOrderByNameAsc(pageable: Pageable): Page<Patient>
 }

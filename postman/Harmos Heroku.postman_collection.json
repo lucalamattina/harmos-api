@@ -1,0 +1,408 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Harmos Heroku",
+		"description": "API para el sistema Harmos",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"doctor@example.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phone\": \"1234567890\",\n    \"specialties\": [\"TO\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users",
+							"host": ["{{base_url}}"],
+							"path": ["users"]
+						}
+					}
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/1",
+							"host": ["{{base_url}}"],
+							"path": ["users", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users?email=doctor@example.com&name=John&specialties=TO&page=0&size=10",
+							"host": ["{{base_url}}"],
+							"path": ["users"],
+							"query": [
+								{
+									"key": "email",
+									"value": "doctor@example.com"
+								},
+								{
+									"key": "name",
+									"value": "John"
+								},
+								{
+									"key": "specialties",
+									"value": "TO"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/1",
+							"host": ["{{base_url}}"],
+							"path": ["users", "1"]
+						}
+					}
+				},
+				{
+					"name": "Add Specialty to User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/1/specialties/1",
+							"host": ["{{base_url}}"],
+							"path": ["users", "1", "specialties", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Patients",
+			"item": [
+				{
+					"name": "Create Patient",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Juan Pérez\",\n    \"phone\": \"1234567890\",\n    \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/patients",
+							"host": ["{{base_url}}"],
+							"path": ["patients"]
+						}
+					}
+				},
+				{
+					"name": "Get Patient by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/patients/1",
+							"host": ["{{base_url}}"],
+							"path": ["patients", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Patients",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/patients?name=Juan&page=0&size=10",
+							"host": ["{{base_url}}"],
+							"path": ["patients"],
+							"query": [
+								{
+									"key": "name",
+									"value": "Juan"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Patient",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/patients/1",
+							"host": ["{{base_url}}"],
+							"path": ["patients", "1"]
+						}
+					}
+				},
+				{
+					"name": "Add Doctor to Patient",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/patients/1/doctors/1",
+							"host": ["{{base_url}}"],
+							"path": ["patients", "1", "doctors", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Specialties",
+			"item": [
+				{
+					"name": "Create Specialty",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"TO\",\n    \"data\": \"Terapia Ocupacional\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/specialties",
+							"host": ["{{base_url}}"],
+							"path": ["specialties"]
+						}
+					}
+				},
+				{
+					"name": "Get Specialty by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/specialties/1",
+							"host": ["{{base_url}}"],
+							"path": ["specialties", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Specialty by Name",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/specialties/search?name=TO",
+							"host": ["{{base_url}}"],
+							"path": ["specialties", "search"],
+							"query": [
+								{
+									"key": "name",
+									"value": "TO"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Specialties",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/specialties",
+							"host": ["{{base_url}}"],
+							"path": ["specialties"]
+						}
+					}
+				},
+				{
+					"name": "Delete Specialty",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/specialties/1",
+							"host": ["{{base_url}}"],
+							"path": ["specialties", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Schedules",
+			"item": [
+				{
+					"name": "Create Schedule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"location\": \"Consultorio 1\",\n    \"dayOfWeek\": \"MONDAY\",\n    \"hourFrom\": 9,\n    \"minuteFrom\": 0,\n    \"hourTo\": 17,\n    \"minuteTo\": 0,\n    \"doctorUserId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/schedules",
+							"host": ["{{base_url}}"],
+							"path": ["schedules"]
+						}
+					}
+				},
+				{
+					"name": "Get All Schedules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/schedules",
+							"host": ["{{base_url}}"],
+							"path": ["schedules"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Announcements",
+			"item": [
+				{
+					"name": "Create Announcement",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Nuevo Anuncio\",\n    \"content\": \"Contenido del anuncio\",\n    \"date\": \"2024-03-20T10:00:00\",\n    \"createdByUserId\": 1,\n    \"specialties\": [\"TO\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/announcements",
+							"host": ["{{base_url}}"],
+							"path": ["announcements"]
+						}
+					}
+				},
+				{
+					"name": "Get All Announcements",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/announcements?page=0&size=10&specialties=TO",
+							"host": ["{{base_url}}"],
+							"path": ["announcements"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "specialties",
+									"value": "TO"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Announcement by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/announcements/1",
+							"host": ["{{base_url}}"],
+							"path": ["announcements", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Authenticate",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"doctor@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/authenticate",
+							"host": ["{{base_url}}"],
+							"path": ["authenticate"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://harmos-api-a77d01707678.herokuapp.com/api"
+		}
+	]
+}
