@@ -7,7 +7,10 @@ import ar.edu.itba.harmos.persistence.AnnouncementRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
-import org.springframework.data.domain.Page@Service
+import org.springframework.data.domain.Page
+import java.time.LocalDateTime
+
+@Service
 
 class AnnouncementService(
     private val announcementRepository: AnnouncementRepository,
@@ -26,7 +29,7 @@ class AnnouncementService(
         val announcement = Announcement(
             createAnnouncementRequest.title,
             createAnnouncementRequest.content,
-            createAnnouncementRequest.date,
+            LocalDateTime.now(),
             specialties,
             createdBy
         )
