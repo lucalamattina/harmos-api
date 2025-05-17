@@ -4,6 +4,8 @@ import ar.edu.itba.harmos.dtos.requests.CreateAnnouncementRequest
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.AppUserResponse
 import ar.edu.itba.harmos.models.Announcement
+import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.security.annotations.CurrentUser
 import ar.edu.itba.harmos.services.AnnouncementService
 import ar.edu.itba.harmos.services.AppUserService
 import org.springframework.http.HttpStatus
@@ -16,14 +18,18 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/announcements")
 class AnnouncementController(
-    private val appUserService: AppUserService,
     private val announcementService: AnnouncementService
 ) {
     @PostMapping()
     @ResponseBody
-    fun create(@RequestBody createAnnouncementRequest: CreateAnnouncementRequest): ResponseEntity<Any> {
-        val appUser = appUserService.getAppUserById(createAnnouncementRequest.createdByUserId)
-            ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+    fun create(
+        @RequestBody createAnnouncementRequest: CreateAnnouncementRequest,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+
         val announcement = announcementService.createAnnouncement(createAnnouncementRequest, appUser)
             ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
         return ResponseEntity(AnnouncementResponse.singleFromModel(announcement), HttpStatus.CREATED)
