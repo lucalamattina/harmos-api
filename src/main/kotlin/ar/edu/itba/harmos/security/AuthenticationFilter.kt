@@ -58,11 +58,15 @@ class AuthenticationFilter(authenticationManager: AuthenticationManager) : Usern
     ) {
         val exp = Date(System.currentTimeMillis() + EXPIRATION_TIME)
         val key = Keys.hmacShaKeyFor(KEY.toByteArray())
-        val claims = Jwts.claims().setSubject((auth.principal as User).username)
-        val token = Jwts.builder().setClaims(claims).signWith(key, SignatureAlgorithm.HS512).setExpiration(exp).compact()
+        val appUser = auth.details as AppUser
+        val claims = Jwts.claims().setSubject(appUser.id.toString())
+        val token = Jwts.builder()
+            .setClaims(claims)
+            .signWith(key, SignatureAlgorithm.HS512)
+            .setExpiration(exp)
+            .compact()
         res.addHeader("token", token)
-        val email = (auth.principal as User).username
-        val tokenResponse = TokenResponse(token, email)
+        val tokenResponse = TokenResponse(token, appUser.email)
         res.status = HttpStatus.OK.value()
         val json = ObjectMapper().writeValueAsString(tokenResponse)
         res.writer.write(json)

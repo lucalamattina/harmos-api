@@ -36,12 +36,12 @@ class CurrentUserArgumentResolver(
             return null
         }
 
-        val userEmail = principal.subject
-        if (userEmail.isNullOrBlank()) {
+        val userId = principal.subject
+        if (userId.isNullOrBlank()) {
             return null
         }
 
-        return appUserService.getAppUserByEmail(userEmail)
+        return appUserService.getAppUserById(userId.toLong())
     }
 }
     
