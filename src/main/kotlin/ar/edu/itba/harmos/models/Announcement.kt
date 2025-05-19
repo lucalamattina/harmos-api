@@ -6,8 +6,12 @@ import javax.persistence.*
 @Entity
 @Table(name = "announcement")
 class Announcement(
+    @Column(columnDefinition = "TEXT")
     var title: String,
+    
+    @Column(columnDefinition = "TEXT")
     var content: String,
+    
     val date: LocalDateTime,
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -20,6 +24,7 @@ class Announcement(
 
     @ManyToOne(fetch = FetchType.EAGER)
     val createdBy: AppUser,
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
