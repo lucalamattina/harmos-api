@@ -5,6 +5,7 @@ import ar.edu.itba.harmos.common.constants.SecurityConstants.EXPIRATION_TIME
 import ar.edu.itba.harmos.common.constants.SecurityConstants.KEY
 import ar.edu.itba.harmos.dtos.responses.TokenResponse
 import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.services.AppUserService
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
@@ -25,11 +26,13 @@ import javax.servlet.http.HttpServletResponse
 import kotlin.collections.ArrayList
 
 
-class AuthenticationFilter(authenticationManager: AuthenticationManager) : UsernamePasswordAuthenticationFilter() {
+class AuthenticationFilter(
+    private val authenticationManager: AuthenticationManager,
+    private val appUserService: AppUserService
+) : UsernamePasswordAuthenticationFilter() {
 
     init {
         this.setFilterProcessesUrl(AUTHENTICATE_URL)
-        this.authenticationManager = authenticationManager
     }
 
     @Throws(AuthenticationException::class)
@@ -58,7 +61,8 @@ class AuthenticationFilter(authenticationManager: AuthenticationManager) : Usern
     ) {
         val exp = Date(System.currentTimeMillis() + EXPIRATION_TIME)
         val key = Keys.hmacShaKeyFor(KEY.toByteArray())
-        val appUser = auth.details as AppUser
+        val email = (auth.principal as User).username
+        val appUser = appUserService.getAppUserByEmail(email) ?: throw RuntimeException("User not found")
         val claims = Jwts.claims().setSubject(appUser.id.toString())
         val token = Jwts.builder()
             .setClaims(claims)
@@ -66,7 +70,7 @@ class AuthenticationFilter(authenticationManager: AuthenticationManager) : Usern
             .setExpiration(exp)
             .compact()
         res.addHeader("token", token)
-        val tokenResponse = TokenResponse(token, appUser.email)
+        val tokenResponse = TokenResponse(token, email)
         res.status = HttpStatus.OK.value()
         val json = ObjectMapper().writeValueAsString(tokenResponse)
         res.writer.write(json)
