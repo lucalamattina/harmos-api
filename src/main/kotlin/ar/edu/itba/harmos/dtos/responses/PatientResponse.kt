@@ -1,12 +1,13 @@
 package ar.edu.itba.harmos.dtos.responses
 
 import ar.edu.itba.harmos.models.Patient
+import ar.edu.itba.harmos.models.PatientStatus
 
 data class PatientResponse (
     val id: Long,
     val name: String,
     val phone: String,
-    val status: String,
+    val status: PatientStatus,
     val doctors: List<String>,
     val doctorSpecialties: Set<String>
 ) {
