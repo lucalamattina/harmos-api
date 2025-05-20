@@ -4,6 +4,7 @@ import ar.edu.itba.harmos.common.constants.SecurityConstants.HEADER_NAME
 import ar.edu.itba.harmos.common.constants.SecurityConstants.KEY
 import ar.edu.itba.harmos.common.constants.SecurityConstants.TOKEN_PREFIX
 import io.jsonwebtoken.Claims
+import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.security.authentication.AuthenticationManager
@@ -25,9 +26,14 @@ class AuthorizationFilter(authManager: AuthenticationManager) : BasicAuthenticat
             chain.doFilter(request, response)
             return
         }
-        val authentication = authenticate(request)
-        SecurityContextHolder.getContext().authentication = authentication
-        chain.doFilter(request, response)
+        try {
+            val authentication = authenticate(request)
+            SecurityContextHolder.getContext().authentication = authentication
+            chain.doFilter(request, response)
+        } catch (e: ExpiredJwtException) {
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+            response.writer.write("Token expired")
+        }
     }
 
     private fun authenticate(request: HttpServletRequest): UsernamePasswordAuthenticationToken? {

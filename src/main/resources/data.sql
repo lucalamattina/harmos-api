@@ -54,7 +54,9 @@ INSERT INTO users (id, email, password, first_name, last_name, phone) VALUES
 (27, 'doctor27@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Emiliano', 'Cortés', '0120120123'),
 (28, 'doctor28@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Renata', 'Fuentes', '1231231234'),
 (29, 'doctor29@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Maximiliano', 'Valenzuela', '2342342345'),
-(30, 'doctor30@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Antonella', 'Araya', '3453453456');
+(30, 'doctor30@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Antonella', 'Araya', '3453453456'),
+(31, 'alejandro.rolandelli@gmail.com', '1234', 'ALE', 'ROLO', '3453453456');
+
 
 -- Asignar roles a usuarios
 INSERT INTO users_roles (app_user_id, roles_id) VALUES
@@ -63,7 +65,8 @@ INSERT INTO users_roles (app_user_id, roles_id) VALUES
 (11, 1), (12, 1), (13, 1), (14, 1), (15, 1),
 (16, 1), (17, 1), (18, 1), (19, 1), (20, 1),
 (21, 1), (22, 1), (23, 1), (24, 1), (25, 1),
-(26, 1), (27, 1), (28, 1), (29, 1), (30, 1);
+(26, 1), (27, 1), (28, 1), (29, 1), (30, 1),
+(31, 1); -- Añadido tu usuario con rol de doctor
 
 -- Asignar especialidades a usuarios (distribuidas aleatoriamente)
 INSERT INTO user_specialty (user_id, specialty_id) VALUES
@@ -76,7 +79,8 @@ INSERT INTO user_specialty (user_id, specialty_id) VALUES
 (19, 5), (19, 2), (20, 1), (20, 4), (21, 3),
 (22, 5), (22, 1), (23, 2), (23, 3), (24, 4),
 (25, 5), (25, 2), (26, 1), (26, 4), (27, 3),
-(28, 5), (28, 1), (29, 2), (29, 3), (30, 4);
+(28, 5), (28, 1), (29, 2), (29, 3), (30, 4),
+(31, 1), (31, 2), (31, 3), (31, 4), (31, 5); -- Añadidas todas las especialidades para tu usuario
 
 -- Insertar pacientes (50 pacientes)
 INSERT INTO patients (id, name, phone, status) VALUES
@@ -205,3 +209,12 @@ INSERT INTO announcement_specialty (announcement_id, specialty_id) VALUES
 (23, 4), -- Mejoras en Atención - PSICO
 (24, 5), -- Actualización de Procedimientos - FISIO
 (25, 1); -- Nuevo Servicio de Emergencias - TO 
+
+
+
+SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
+SELECT setval('specialties_id_seq', (SELECT MAX(id) FROM specialties));
+SELECT setval('roles_id_seq', (SELECT MAX(id) FROM roles));
+SELECT setval('patients_id_seq', (SELECT MAX(id) FROM patients));
+SELECT setval('schedule_id_seq', (SELECT MAX(id) FROM schedule));
+SELECT setval('announcement_id_seq', (SELECT MAX(id) FROM announcement));
