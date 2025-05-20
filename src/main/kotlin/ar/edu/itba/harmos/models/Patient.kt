@@ -7,7 +7,9 @@ import javax.persistence.*
 class Patient(
     val name: String,
     val phone: String,
-    val status: String,
+    
+    @Enumerated(EnumType.STRING)
+    val status: PatientStatus,
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -24,7 +26,7 @@ class Patient(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
-    constructor() : this("", "", "", mutableListOf(), emptyList())
+    constructor() : this("", "", PatientStatus.PENDING, mutableListOf(), emptyList())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

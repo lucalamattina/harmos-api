@@ -58,6 +58,11 @@ class PatientService( private val patientRepository: PatientRepository,
         return patientRepository.findAllByOrderByNameAsc(pageable)
     }
 
+    fun getPatientsByDoctorAndName(doctorId: Long, name: String, pageable: Pageable): Page<Patient> {
+        val doctor = appUserRepository.findById(doctorId).orElse(null) ?: return Page.empty(pageable)
+        return patientRepository.findByDoctorsContainingAndNameContainingIgnoreCase(doctor, name, pageable)
+    }
+
     @Transactional
     fun addDoctorToPatient(patientId: Long, doctorId: Long): Boolean {
         val patientOpt = patientRepository.findById(patientId)

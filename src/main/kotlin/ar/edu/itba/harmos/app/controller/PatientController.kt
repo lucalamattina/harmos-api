@@ -2,6 +2,7 @@ package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.requests.CreatePatientRequest
 import ar.edu.itba.harmos.dtos.responses.PatientResponse
+import ar.edu.itba.harmos.models.PatientStatus
 import ar.edu.itba.harmos.services.PatientService
 import ar.edu.itba.harmos.services.AppUserService
 import org.springframework.data.domain.Page
@@ -19,6 +20,12 @@ class PatientController(
     private val patientService: PatientService,
     private val appUserService: AppUserService
 ) {
+
+    @GetMapping("/statuses")
+    @ResponseBody
+    fun getStatuses(): ResponseEntity<Any> {
+        return ResponseEntity.ok(PatientStatus.values())
+    }
 
     @PostMapping()
     @ResponseBody
@@ -52,18 +59,24 @@ class PatientController(
     fun getPatients(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
-        @RequestParam(required = false) name: String?
+        @RequestParam(required = false) name: String?,
+        @RequestParam(required = false) doctorId: Long?
     ): ResponseEntity<Any> {
         val pageable = PageRequest.of(page, size)
-        val patients = if (!name.isNullOrEmpty()) {
-            patientService.getPatientsContainingName(name, pageable)
-        } else {
-            patientService.getPatients(pageable)
+        val patients = when {
+            doctorId != null && !name.isNullOrEmpty() -> {
+                patientService.getPatientsByDoctorAndName(doctorId, name, pageable)
+            }
+            !name.isNullOrEmpty() -> {
+                patientService.getPatientsContainingName(name, pageable)
+            }
+            else -> {
+                patientService.getPatients(pageable)
+            }
         }
         val response = patients.map { PatientResponse.singleFromModel(it) }
         return ResponseEntity.ok(response)
     }
-
 
     @PostMapping("/{patientId}/doctors/{doctorId}") //TODO: cambiar Doctors por users?
     fun addDoctorToPatient(@PathVariable patientId: Long, @PathVariable doctorId: Long): ResponseEntity<Any> {

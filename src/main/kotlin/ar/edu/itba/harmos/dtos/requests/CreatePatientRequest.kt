@@ -1,8 +1,10 @@
 package ar.edu.itba.harmos.dtos.requests
 
-data class CreatePatientRequest (
+import ar.edu.itba.harmos.models.PatientStatus
+
+data class CreatePatientRequest(
     val name: String,
     val phone: String,
-    val status: String,
+    val status: PatientStatus = PatientStatus.PENDING
 )
 //TODO: CHECK, tendria q haber mas? agregar doctores? status?
