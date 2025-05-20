@@ -55,30 +55,27 @@ class PatientController(
     }
 
     @GetMapping
-    @ResponseBody
     fun getPatients(
-        @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) name: String?,
-        @RequestParam(required = false) doctorId: Long?
-    ): ResponseEntity<Any> {
-        val pageable = PageRequest.of(page, size)
+        @RequestParam(required = false) doctor: String?,
+        @RequestParam(required = false) status: PatientStatus?,
+        pageable: Pageable
+    ): ResponseEntity<Page<PatientResponse>> {
         val patients = when {
-            doctorId != null && !name.isNullOrEmpty() -> {
-                patientService.getPatientsByDoctorAndName(doctorId, name, pageable)
+            !doctor.isNullOrEmpty() -> {
+                patientService.getPatientsByDoctorName(doctor, pageable)
             }
             !name.isNullOrEmpty() -> {
                 patientService.getPatientsContainingName(name, pageable)
             }
             else -> {
-                patientService.getPatients(pageable)
+                patientService.getPatients(pageable, status)
             }
         }
-        val response = patients.map { PatientResponse.singleFromModel(it) }
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(patients.map { PatientResponse.singleFromModel(it) })
     }
 
-    @PostMapping("/{patientId}/doctors/{doctorId}") //TODO: cambiar Doctors por users?
+    @PostMapping("/{patientId}/doctors/{doctorId}")
     fun addDoctorToPatient(@PathVariable patientId: Long, @PathVariable doctorId: Long): ResponseEntity<Any> {
         val patient = patientService.getPatientById(patientId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
         val doctor = appUserService.getAppUserById(doctorId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
@@ -96,7 +93,6 @@ class PatientController(
         }
     }
 
-    //TODO: GET DOCTORS DE PACIENTE
 
     //TODO: GET FILES PACIENTE
 

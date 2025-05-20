@@ -3,12 +3,14 @@ package ar.edu.itba.harmos.services
 import ar.edu.itba.harmos.dtos.requests.CreatePatientRequest
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.Patient
+import ar.edu.itba.harmos.models.PatientStatus
 import ar.edu.itba.harmos.persistence.AppUserRepository
 import ar.edu.itba.harmos.persistence.PatientRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.PageImpl
 
 @Service
 class PatientService( private val patientRepository: PatientRepository,
@@ -30,6 +32,16 @@ class PatientService( private val patientRepository: PatientRepository,
 
     fun getPatientsContainingName(name: String, pageable: Pageable): Page<Patient> {
         return patientRepository.findByNameContainingIgnoreCase(name, pageable)
+    }
+
+    fun getPatientsByDoctorName(doctorName: String, pageable: Pageable): Page<Patient> {
+        return patientRepository.findByDoctorNameContainingIgnoreCase(doctorName, pageable)
+    }
+
+    fun getPatientsByDoctorAndName(doctorName: String, patientName: String, pageable: Pageable): Page<Patient> {
+        val patients = patientRepository.findByDoctorNameContainingIgnoreCase(doctorName, pageable)
+        val filteredList = patients.toList().filter { it.name.contains(patientName, ignoreCase = true) }
+        return PageImpl(filteredList, pageable, filteredList.size.toLong())
     }
 
     fun getPatientByName(name: String): Patient? {
@@ -54,13 +66,12 @@ class PatientService( private val patientRepository: PatientRepository,
         }
     }
 
-    fun getPatients(pageable: Pageable): Page<Patient> {
-        return patientRepository.findAllByOrderByNameAsc(pageable)
-    }
-
-    fun getPatientsByDoctorAndName(doctorId: Long, name: String, pageable: Pageable): Page<Patient> {
-        val doctor = appUserRepository.findById(doctorId).orElse(null) ?: return Page.empty(pageable)
-        return patientRepository.findByDoctorsContainingAndNameContainingIgnoreCase(doctor, name, pageable)
+    fun getPatients(pageable: Pageable, status: PatientStatus? = null): Page<Patient> {
+        return if (status != null) {
+            patientRepository.findByStatus(status, pageable)
+        } else {
+            patientRepository.findAll(pageable)
+        }
     }
 
     @Transactional
