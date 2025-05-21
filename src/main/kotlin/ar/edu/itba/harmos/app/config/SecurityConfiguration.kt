@@ -1,6 +1,6 @@
 package ar.edu.itba.harmos.app.config
 
-import ar.edu.itba.harmos.common.constants.SecurityConstants.SIGN_UP_URL
+import ar.edu.itba.harmos.common.constants.SecurityConstants.AUTHENTICATE_URL
 import ar.edu.itba.harmos.security.AuthenticationFilter
 import ar.edu.itba.harmos.security.AuthorizationFilter
 import ar.edu.itba.harmos.services.AppUserDetailsService
@@ -37,9 +37,9 @@ class SecurityConfiguration(
     @Throws(java.lang.Exception::class)
     override fun configure(http: HttpSecurity) {
         http.cors().and().csrf().disable().authorizeRequests()
-            .antMatchers(HttpMethod.POST, SIGN_UP_URL)
-            .permitAll() //.anyRequest().authenticated() en algun momento esto se tendria que hacer bien
-            .anyRequest().permitAll()
+            .antMatchers(HttpMethod.POST, AUTHENTICATE_URL).permitAll()
+            //.antMatchers(HttpMethod.POST, "/users").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            //.anyRequest().authenticated()
             .and()
             .addFilter(AuthenticationFilter(authenticationManager(), appUserService))
             .addFilter(AuthorizationFilter(authenticationManager()))
