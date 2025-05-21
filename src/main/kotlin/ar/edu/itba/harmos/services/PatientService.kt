@@ -30,18 +30,32 @@ class PatientService( private val patientRepository: PatientRepository,
         return patientRepository.save(patient)
     }
 
-    fun getPatientsContainingName(name: String, pageable: Pageable): Page<Patient> {
-        return patientRepository.findByNameContainingIgnoreCase(name, pageable)
+    fun getPatientsContainingName(name: String, pageable: Pageable, status: PatientStatus? = null): Page<Patient> {
+        return if (status != null) {
+            patientRepository.findByNameContainingIgnoreCaseAndStatus(name, status, pageable)
+        } else {
+            patientRepository.findByNameContainingIgnoreCase(name, pageable)
+        }
     }
 
-    fun getPatientsByDoctorName(doctorName: String, pageable: Pageable): Page<Patient> {
-        return patientRepository.findByDoctorNameContainingIgnoreCase(doctorName, pageable)
+    fun getPatientsByDoctorName(doctorName: String, pageable: Pageable, status: PatientStatus? = null): Page<Patient> {
+        return if (status != null) {
+            patientRepository.findByDoctorNameContainingIgnoreCaseAndStatus(doctorName, status, pageable)
+        } else {
+            patientRepository.findByDoctorNameContainingIgnoreCase(doctorName, pageable)
+        }
     }
 
-    fun getPatientsByDoctorAndName(doctorName: String, patientName: String, pageable: Pageable): Page<Patient> {
-        val patients = patientRepository.findByDoctorNameContainingIgnoreCase(doctorName, pageable)
-        val filteredList = patients.toList().filter { it.name.contains(patientName, ignoreCase = true) }
-        return PageImpl(filteredList, pageable, filteredList.size.toLong())
+    fun getPatientsByDoctorAndName(doctorName: String, patientName: String, pageable: Pageable, status: PatientStatus? = null): Page<Patient> {
+        return if (status != null) {
+            patientRepository.findByDoctorNameContainingIgnoreCaseAndPatientNameContainingIgnoreCaseAndStatus(
+                doctorName, patientName, status, pageable
+            )
+        } else {
+            patientRepository.findByDoctorNameContainingIgnoreCaseAndPatientNameContainingIgnoreCase(
+                doctorName, patientName, pageable
+            )
+        }
     }
 
     fun getPatientByName(name: String): Patient? {
@@ -71,6 +85,48 @@ class PatientService( private val patientRepository: PatientRepository,
             patientRepository.findByStatus(status, pageable)
         } else {
             patientRepository.findAll(pageable)
+        }
+    }
+
+    fun getPatientsByDoctorSpecialty(specialty: String, pageable: Pageable, status: PatientStatus? = null): Page<Patient> {
+        return if (status != null) {
+            patientRepository.findByDoctorSpecialtyAndStatus(specialty, status, pageable)
+        } else {
+            patientRepository.findByDoctorSpecialty(specialty, pageable)
+        }
+    }
+
+    fun getPatientsByDoctorSpecialtyAndName(specialty: String, patientName: String, pageable: Pageable, status: PatientStatus? = null): Page<Patient> {
+        return if (status != null) {
+            patientRepository.findByDoctorSpecialtyAndPatientNameContainingIgnoreCaseAndStatus(specialty, patientName, status, pageable)
+        } else {
+            patientRepository.findByDoctorSpecialtyAndPatientNameContainingIgnoreCase(specialty, patientName, pageable)
+        }
+    }
+
+    fun getPatientsByDoctorSpecialtyAndDoctorName(specialty: String, doctorName: String, pageable: Pageable, status: PatientStatus? = null): Page<Patient> {
+        return if (status != null) {
+            patientRepository.findByDoctorSpecialtyAndDoctorNameContainingIgnoreCaseAndStatus(specialty, doctorName, status, pageable)
+        } else {
+            patientRepository.findByDoctorSpecialtyAndDoctorNameContainingIgnoreCase(specialty, doctorName, pageable)
+        }
+    }
+
+    fun getPatientsByDoctorSpecialtyAndDoctorNameAndPatientName(
+        specialty: String,
+        doctorName: String,
+        patientName: String,
+        pageable: Pageable,
+        status: PatientStatus? = null
+    ): Page<Patient> {
+        return if (status != null) {
+            patientRepository.findByDoctorSpecialtyAndDoctorNameContainingIgnoreCaseAndPatientNameContainingIgnoreCaseAndStatus(
+                specialty, doctorName, patientName, status, pageable
+            )
+        } else {
+            patientRepository.findByDoctorSpecialtyAndDoctorNameContainingIgnoreCaseAndPatientNameContainingIgnoreCase(
+                specialty, doctorName, patientName, pageable
+            )
         }
     }
 
