@@ -9,6 +9,7 @@ import ar.edu.itba.harmos.services.AnnouncementService
 import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.ScheduleService
 import ar.edu.itba.harmos.services.SpecialtyService
+import ar.edu.itba.harmos.persistence.PasswordResetTokenRepository
 import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -22,7 +23,8 @@ class UserController(
     private val appUserService: AppUserService,
     private val announcementService: AnnouncementService,
     private val scheduleService: ScheduleService,
-    private val specialtyService: SpecialtyService
+    private val specialtyService: SpecialtyService,
+    private val passwordResetTokenRepository: PasswordResetTokenRepository
 ) {
 
     @PostMapping()
@@ -92,6 +94,47 @@ class UserController(
             ResponseEntity(HttpStatus.NO_CONTENT)
         } else {
             ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    fun forgotPassword(@RequestParam email: String): ResponseEntity<Any> {
+        return if (appUserService.createPasswordResetTokenForUser(email)) {
+            ResponseEntity.ok().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @PostMapping("/create-reset-token")
+    fun createResetToken(@RequestParam email: String): ResponseEntity<Any> {
+        val token = appUserService.createPasswordResetToken(email)
+        return if (token != null) {
+            ResponseEntity.ok(mapOf("token" to token))
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @GetMapping("/validate-reset-token")
+    fun validateResetToken(@RequestParam token: String): ResponseEntity<Any> {
+        val resetToken = passwordResetTokenRepository.findByToken(token)
+        return when {
+            resetToken == null -> ResponseEntity.notFound().build()
+            resetToken.isExpired() -> ResponseEntity.status(HttpStatus.GONE).build()
+            else -> ResponseEntity.ok().build()
+        }
+    }
+
+    @PostMapping("/reset-password")
+    fun resetPassword(
+        @RequestParam token: String,
+        @RequestParam newPassword: String
+    ): ResponseEntity<Any> {
+        return if (appUserService.resetPassword(token, newPassword)) {
+            ResponseEntity.ok().build()
+        } else {
+            ResponseEntity.badRequest().build()
         }
     }
 

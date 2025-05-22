@@ -45,14 +45,19 @@ class AppUserRepositoryTest {
         val specialty1 = createSpecialty("Cardiología")
         val specialty2 = createSpecialty("Neurología")
         val user1 = createAppUser("tdorado1@example.com", mutableSetOf(specialty1))
-        val user2 = createAppUser("otro@example.com", mutableSetOf(specialty2))
+        createAppUser("otro@example.com", mutableSetOf(specialty2)) // Not used in assertions
         val user3 = createAppUser("tdorado2@test.com", mutableSetOf(specialty1, specialty2))
         entityManager.flush()
 
         val pageable: Pageable = PageRequest.of(0, 10)
 
         // When
-        val result = appUserRepository.findAppUsersByEmailAndSpecialties(email = "tdorado", pageable = pageable)
+        val result = appUserRepository.findAppUsersByEmailAndSpecialties(
+            email = "tdorado",
+            name = null,
+            specialties = null,
+            pageable = pageable
+        )
 
         // Then
         assertThat(result.content).hasSize(2)
@@ -65,14 +70,19 @@ class AppUserRepositoryTest {
         val specialty1 = createSpecialty("Cardiología")
         val specialty2 = createSpecialty("Neurología")
         val user1 = createAppUser("user1@example.com", mutableSetOf(specialty1))
-        val user2 = createAppUser("user2@example.com", mutableSetOf(specialty2))
+        createAppUser("user2@example.com", mutableSetOf(specialty2)) // Not used in assertions
         val user3 = createAppUser("user3@test.com", mutableSetOf(specialty1, specialty2))
         entityManager.flush()
 
         val pageable: Pageable = PageRequest.of(0, 10)
 
         // When
-        val result = appUserRepository.findAppUsersByEmailAndSpecialties(specialties = listOf("Cardiología"), pageable = pageable)
+        val result = appUserRepository.findAppUsersByEmailAndSpecialties(
+            email = null,
+            name = null,
+            specialties = listOf(specialty1),
+            pageable = pageable
+        )
 
         // Then
         assertThat(result.content).hasSize(2)
@@ -85,14 +95,19 @@ class AppUserRepositoryTest {
         val specialty1 = createSpecialty("Cardiología")
         val specialty2 = createSpecialty("Neurología")
         val user1 = createAppUser("tdorado1@example.com", mutableSetOf(specialty1))
-        val user2 = createAppUser("otro@example.com", mutableSetOf(specialty2))
+        createAppUser("otro@example.com", mutableSetOf(specialty2)) // Not used in assertions
         val user3 = createAppUser("tdorado2@test.com", mutableSetOf(specialty1, specialty2))
         entityManager.flush()
 
         val pageable: Pageable = PageRequest.of(0, 10)
 
         // When
-        val result = appUserRepository.findAppUsersByEmailAndSpecialties(email = "tdorado", specialties = listOf("Cardiología"), pageable = pageable)
+        val result = appUserRepository.findAppUsersByEmailAndSpecialties(
+            email = "tdorado",
+            name = null,
+            specialties = listOf(specialty1),
+            pageable = pageable
+        )
 
         // Then
         assertThat(result.content).hasSize(2)
@@ -111,7 +126,12 @@ class AppUserRepositoryTest {
         val pageable: Pageable = PageRequest.of(0, 10)
 
         // When
-        val result = appUserRepository.findAppUsersByEmailAndSpecialties(email = null, specialties = null, pageable = pageable)
+        val result = appUserRepository.findAppUsersByEmailAndSpecialties(
+            email = null,
+            name = null,
+            specialties = null,
+            pageable = pageable
+        )
 
         // Then
         assertThat(result.content).hasSize(2)
@@ -128,7 +148,12 @@ class AppUserRepositoryTest {
         val pageable: Pageable = PageRequest.of(0, 10)
 
         // When
-        val result = appUserRepository.findAppUsersByEmailAndSpecialties(email = "nonexistent", specialties = listOf("Pediatría"), pageable = pageable)
+        val result = appUserRepository.findAppUsersByEmailAndSpecialties(
+            email = "nonexistent",
+            name = null,
+            specialties = listOf(createSpecialty("Pediatría")),
+            pageable = pageable
+        )
 
         // Then
         assertThat(result.content).isEmpty()
@@ -147,8 +172,18 @@ class AppUserRepositoryTest {
         val pageableSecondPage: PageRequest = PageRequest.of(1, 2)
 
         // When
-        val firstPageResult = appUserRepository.findAppUsersByEmailAndSpecialties(specialties = listOf("Traumatología"), pageable = pageableFirstPage)
-        val secondPageResult = appUserRepository.findAppUsersByEmailAndSpecialties(specialties = listOf("Traumatología"), pageable = pageableSecondPage)
+        val firstPageResult = appUserRepository.findAppUsersByEmailAndSpecialties(
+            email = null,
+            name = null,
+            specialties = listOf(specialty),
+            pageable = pageableFirstPage
+        )
+        val secondPageResult = appUserRepository.findAppUsersByEmailAndSpecialties(
+            email = null,
+            name = null,
+            specialties = listOf(specialty),
+            pageable = pageableSecondPage
+        )
 
         // Then
         assertThat(firstPageResult.content).hasSize(2)
