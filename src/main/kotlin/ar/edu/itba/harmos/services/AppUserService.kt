@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.beans.factory.annotation.Value
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -21,7 +22,8 @@ class AppUserService(
     private val passwordEncoder: PasswordEncoder,
     private val specialtyService: SpecialtyService,
     private val passwordResetTokenRepository: PasswordResetTokenRepository,
-    private val emailService: EmailService
+    private val emailService: EmailService,
+    @Value("\${app.frontend.url}") private val frontendUrl: String
 ) {
 
     fun createUser(createAppUserRequest: CreateAppUserRequest): AppUser? {
@@ -115,7 +117,7 @@ class AppUserService(
         val token = createPasswordResetToken(email) ?: return false
         
         // Send email with reset link
-        val resetLink = "http://localhost:3000/reset-password?token=$token"
+        val resetLink = "$frontendUrl/reset-password?token=$token"
         emailService.sendPasswordResetEmail(email, resetLink)
         
         return true
