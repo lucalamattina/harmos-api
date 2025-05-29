@@ -2,6 +2,7 @@ package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.Patient
+import ar.edu.itba.harmos.models.PatientStatus
 import ar.edu.itba.harmos.models.Specialty
 import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.PatientService
@@ -33,8 +34,16 @@ class PatientControllerTest {
         // Given
         val patientId = 1L
         val doctorId = 1L
-        val patient = Patient("Test Patient", "123", "ACTIVE", mutableListOf(), emptyList(), patientId)
-        val doctor = AppUser("test@test.com", "pass", "John", "Doe", "123", mutableSetOf(Specialty("TO")), emptySet(), doctorId)
+        val patient = Patient("Test Patient", "123", PatientStatus.ACTIVE, mutableListOf(), emptyList(), patientId)
+        val doctor = AppUser(
+            email = "test@test.com",
+            password = "pass",
+            firstName = "John",
+            lastName = "Doe",
+            phone = "123",
+            specialties = mutableSetOf(Specialty("TO")),
+            roles = emptySet()
+        )
 
         `when`(patientService.getPatientById(patientId)).thenReturn(patient)
         `when`(appUserService.getAppUserById(doctorId)).thenReturn(doctor)
@@ -53,8 +62,16 @@ class PatientControllerTest {
         // Given
         val patientId = 1L
         val doctorId = 1L
-        val doctor = AppUser("test@test.com", "pass", "John", "Doe", "123", mutableSetOf(Specialty("TO")), emptySet(), doctorId)
-        val patient = Patient("Test Patient", "123", "ACTIVE", mutableListOf(doctor), emptyList(), patientId)
+        val doctor = AppUser(
+            email = "test@test.com",
+            password = "pass",
+            firstName = "John",
+            lastName = "Doe",
+            phone = "123",
+            specialties = mutableSetOf(Specialty("TO")),
+            roles = emptySet()
+        )
+        val patient = Patient("Test Patient", "123", PatientStatus.ACTIVE, mutableListOf(doctor), emptyList(), patientId)
 
         `when`(patientService.getPatientById(patientId)).thenReturn(patient)
         `when`(appUserService.getAppUserById(doctorId)).thenReturn(doctor)
@@ -88,7 +105,7 @@ class PatientControllerTest {
         // Given
         val patientId = 1L
         val doctorId = 1L
-        val patient = Patient("Test Patient", "123", "ACTIVE", mutableListOf(), emptyList(), patientId)
+        val patient = Patient("Test Patient", "123", PatientStatus.ACTIVE, mutableListOf(), emptyList(), patientId)
 
         `when`(patientService.getPatientById(patientId)).thenReturn(patient)
         `when`(appUserService.getAppUserById(doctorId)).thenReturn(null)
@@ -106,8 +123,16 @@ class PatientControllerTest {
         // Given
         val patientId = 1L
         val doctorId = 1L
-        val patient = Patient("Test Patient", "123", "ACTIVE", mutableListOf(), emptyList(), patientId)
-        val doctor = AppUser("test@test.com", "pass", "John", "Doe", "123", mutableSetOf(Specialty("TO")), emptySet(), doctorId)
+        val patient = Patient("Test Patient", "123", PatientStatus.ACTIVE, mutableListOf(), emptyList(), patientId)
+        val doctor = AppUser(
+            email = "test@test.com",
+            password = "pass",
+            firstName = "John",
+            lastName = "Doe",
+            phone = "123",
+            specialties = mutableSetOf(Specialty("TO")),
+            roles = emptySet()
+        )
 
         `when`(patientService.getPatientById(patientId)).thenReturn(patient)
         `when`(appUserService.getAppUserById(doctorId)).thenReturn(doctor)

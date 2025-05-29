@@ -99,6 +99,116 @@
 							"path": ["users", "1", "specialties", "1"]
 						}
 					}
+				},
+				{
+					"name": "Request Password Reset",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/forgot-password?email=doctor@example.com",
+							"host": ["{{base_url}}"],
+							"path": ["users", "forgot-password"],
+							"query": [
+								{
+									"key": "email",
+									"value": "doctor@example.com"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/reset-password?token=your-reset-token&newPassword=newPassword123",
+							"host": ["{{base_url}}"],
+							"path": ["users", "reset-password"],
+							"query": [
+								{
+									"key": "token",
+									"value": "your-reset-token"
+								},
+								{
+									"key": "newPassword",
+									"value": "newPassword123"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get User Announcements",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/1/announcements?page=0&offset=10",
+							"host": ["{{base_url}}"],
+							"path": ["users", "1", "announcements"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "offset",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get User Schedules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/1/schedules",
+							"host": ["{{base_url}}"],
+							"path": ["users", "1", "schedules"]
+						}
+					}
+				},
+				{
+					"name": "Create Reset Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/create-reset-token?email=doctor@example.com",
+							"host": ["{{base_url}}"],
+							"path": ["users", "create-reset-token"],
+							"query": [
+								{
+									"key": "email",
+									"value": "doctor@example.com"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Validate Reset Token",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/validate-reset-token?token=your-reset-token",
+							"host": ["{{base_url}}"],
+							"path": ["users", "validate-reset-token"],
+							"query": [
+								{
+									"key": "token",
+									"value": "your-reset-token"
+								}
+							]
+						}
+					}
 				}
 			]
 		},

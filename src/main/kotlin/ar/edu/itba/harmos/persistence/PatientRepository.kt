@@ -24,6 +24,8 @@ interface PatientRepository : CrudRepository<Patient, Long> {
 
     fun findByStatus(status: PatientStatus, pageable: Pageable): Page<Patient>
 
+    fun findByNameContainingIgnoreCaseAndStatus(name: String, status: PatientStatus, pageable: Pageable): Page<Patient>
+
     @Query("""
         SELECT DISTINCT p FROM Patient p 
         INNER JOIN p.doctors d 
@@ -31,4 +33,158 @@ interface PatientRepository : CrudRepository<Patient, Long> {
         OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))
     """)
     fun findByDoctorNameContainingIgnoreCase(@Param("doctorName") doctorName: String, pageable: Pageable): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        WHERE (LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) 
+        OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%')))
+        AND p.status = :status
+    """)
+    fun findByDoctorNameContainingIgnoreCaseAndStatus(
+        @Param("doctorName") doctorName: String,
+        @Param("status") status: PatientStatus,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        WHERE (LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) 
+        OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%')))
+        AND LOWER(p.name) LIKE LOWER(CONCAT('%', :patientName, '%'))
+    """)
+    fun findByDoctorNameContainingIgnoreCaseAndPatientNameContainingIgnoreCase(
+        @Param("doctorName") doctorName: String,
+        @Param("patientName") patientName: String,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        WHERE (LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) 
+        OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%')))
+        AND LOWER(p.name) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        AND p.status = :status
+    """)
+    fun findByDoctorNameContainingIgnoreCaseAndPatientNameContainingIgnoreCaseAndStatus(
+        @Param("doctorName") doctorName: String,
+        @Param("patientName") patientName: String,
+        @Param("status") status: PatientStatus,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        INNER JOIN d.specialties s 
+        WHERE s.name = :specialty
+    """)
+    fun findByDoctorSpecialty(@Param("specialty") specialty: String, pageable: Pageable): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        INNER JOIN d.specialties s 
+        WHERE s.name = :specialty
+        AND p.status = :status
+    """)
+    fun findByDoctorSpecialtyAndStatus(
+        @Param("specialty") specialty: String,
+        @Param("status") status: PatientStatus,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        INNER JOIN d.specialties s 
+        WHERE s.name = :specialty
+        AND LOWER(p.name) LIKE LOWER(CONCAT('%', :patientName, '%'))
+    """)
+    fun findByDoctorSpecialtyAndPatientNameContainingIgnoreCase(
+        @Param("specialty") specialty: String,
+        @Param("patientName") patientName: String,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        INNER JOIN d.specialties s 
+        WHERE s.name = :specialty
+        AND LOWER(p.name) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        AND p.status = :status
+    """)
+    fun findByDoctorSpecialtyAndPatientNameContainingIgnoreCaseAndStatus(
+        @Param("specialty") specialty: String,
+        @Param("patientName") patientName: String,
+        @Param("status") status: PatientStatus,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        INNER JOIN d.specialties s 
+        WHERE s.name = :specialty
+        AND (LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) 
+        OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%')))
+    """)
+    fun findByDoctorSpecialtyAndDoctorNameContainingIgnoreCase(
+        @Param("specialty") specialty: String,
+        @Param("doctorName") doctorName: String,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        INNER JOIN d.specialties s 
+        WHERE s.name = :specialty
+        AND (LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) 
+        OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%')))
+        AND p.status = :status
+    """)
+    fun findByDoctorSpecialtyAndDoctorNameContainingIgnoreCaseAndStatus(
+        @Param("specialty") specialty: String,
+        @Param("doctorName") doctorName: String,
+        @Param("status") status: PatientStatus,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        INNER JOIN d.specialties s 
+        WHERE s.name = :specialty
+        AND (LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) 
+        OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%')))
+        AND LOWER(p.name) LIKE LOWER(CONCAT('%', :patientName, '%'))
+    """)
+    fun findByDoctorSpecialtyAndDoctorNameContainingIgnoreCaseAndPatientNameContainingIgnoreCase(
+        @Param("specialty") specialty: String,
+        @Param("doctorName") doctorName: String,
+        @Param("patientName") patientName: String,
+        pageable: Pageable
+    ): Page<Patient>
+
+    @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        INNER JOIN p.doctors d 
+        INNER JOIN d.specialties s 
+        WHERE s.name = :specialty
+        AND (LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) 
+        OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%')))
+        AND LOWER(p.name) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        AND p.status = :status
+    """)
+    fun findByDoctorSpecialtyAndDoctorNameContainingIgnoreCaseAndPatientNameContainingIgnoreCaseAndStatus(
+        @Param("specialty") specialty: String,
+        @Param("doctorName") doctorName: String,
+        @Param("patientName") patientName: String,
+        @Param("status") status: PatientStatus,
+        pageable: Pageable
+    ): Page<Patient>
 }

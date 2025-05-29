@@ -59,14 +59,30 @@ class PatientController(
         @RequestParam(required = false) name: String?,
         @RequestParam(required = false) doctor: String?,
         @RequestParam(required = false) status: PatientStatus?,
+        @RequestParam(required = false) specialty: String?,
         pageable: Pageable
     ): ResponseEntity<Page<PatientResponse>> {
         val patients = when {
+            !specialty.isNullOrEmpty() && !doctor.isNullOrEmpty() && !name.isNullOrEmpty() -> {
+                patientService.getPatientsByDoctorSpecialtyAndDoctorNameAndPatientName(specialty, doctor, name, pageable, status)
+            }
+            !specialty.isNullOrEmpty() && !doctor.isNullOrEmpty() -> {
+                patientService.getPatientsByDoctorSpecialtyAndDoctorName(specialty, doctor, pageable, status)
+            }
+            !specialty.isNullOrEmpty() && !name.isNullOrEmpty() -> {
+                patientService.getPatientsByDoctorSpecialtyAndName(specialty, name, pageable, status)
+            }
+            !specialty.isNullOrEmpty() -> {
+                patientService.getPatientsByDoctorSpecialty(specialty, pageable, status)
+            }
+            !doctor.isNullOrEmpty() && !name.isNullOrEmpty() -> {
+                patientService.getPatientsByDoctorAndName(doctor, name, pageable, status)
+            }
             !doctor.isNullOrEmpty() -> {
-                patientService.getPatientsByDoctorName(doctor, pageable)
+                patientService.getPatientsByDoctorName(doctor, pageable, status)
             }
             !name.isNullOrEmpty() -> {
-                patientService.getPatientsContainingName(name, pageable)
+                patientService.getPatientsContainingName(name, pageable, status)
             }
             else -> {
                 patientService.getPatients(pageable, status)
@@ -92,7 +108,6 @@ class PatientController(
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
-
 
     //TODO: GET FILES PACIENTE
 

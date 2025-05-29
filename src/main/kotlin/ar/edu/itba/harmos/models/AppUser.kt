@@ -6,7 +6,7 @@ import javax.persistence.*
 @Table(name = "users")
 class AppUser (
     val email: String,
-    val password: String,
+    var password: String,
     val firstName: String,
     val lastName: String,
     val phone: String,

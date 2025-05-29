@@ -2,6 +2,7 @@ package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.requests.EmailRequest
 import ar.edu.itba.harmos.dtos.responses.EmailResponse
+import ar.edu.itba.harmos.models.EmailTemplate
 import ar.edu.itba.harmos.services.EmailService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -16,7 +17,12 @@ class EmailController @Autowired constructor(
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun createMessage(@RequestBody request: EmailRequest): ResponseEntity<EmailResponse> {
-        emailService.sendEmail(request.to, request.subject, request.body)
+        val template = EmailTemplate(
+            subject = request.subject,
+            body = request.body,
+            isHtml = false
+        )
+        emailService.sendEmail(request.to, template)
         
         return ResponseEntity
             .status(HttpStatus.CREATED)
