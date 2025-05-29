@@ -12,8 +12,8 @@ DELETE FROM roles;
 
 -- Insertar roles
 INSERT INTO roles (id, role) VALUES
-(1, 'ROLE_DOCTOR'),
-(2, 'ROLE_ADMIN');
+(1, 'DOCTOR'),
+(2, 'ADMINISTRATOR');
 
 -- Insertar especialidades
 INSERT INTO specialties (id, name) VALUES
@@ -55,7 +55,8 @@ INSERT INTO users (id, email, password, first_name, last_name, phone) VALUES
 (28, 'doctor28@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Renata', 'Fuentes', '1231231234'),
 (29, 'doctor29@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Maximiliano', 'Valenzuela', '2342342345'),
 (30, 'doctor30@example.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'Antonella', 'Araya', '3453453456'),
-(31, 'alejandro.rolandelli@gmail.com', '1234', 'ALE', 'ROLO', '3453453456');
+(31, 'alejandro.rolandelli@gmail.com', '$2a$10$dAH3Y/lJdVXet4ALyeHy7.i.3QckyKhzD6uZIvchipxex1CXpc2Dm', 'ALE', 'ROLO', '3453453456'),
+(32, 'noreplyharmos@gmail.com', '$2a$10$dAH3Y/lJdVXet4ALyeHy7.i.3QckyKhzD6uZIvchipxex1CXpc2Dm', 'SUPER', 'USER', '3453453456');
 
 -- Asignar roles a usuarios
 INSERT INTO users_roles (app_user_id, roles_id) VALUES

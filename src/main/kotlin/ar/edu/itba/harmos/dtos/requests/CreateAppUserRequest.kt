@@ -6,5 +6,6 @@ data class CreateAppUserRequest (
     val firstName: String,
     val lastName: String,
     val phone: String,
-    val specialties: List<String> // Accept multiple specialty names
+    val specialties: List<String>,
+    val roles: List<String>? = emptyList()
 )

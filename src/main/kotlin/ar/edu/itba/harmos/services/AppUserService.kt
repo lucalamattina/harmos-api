@@ -2,9 +2,12 @@ package ar.edu.itba.harmos.services
 
 import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
 import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.models.AppUserRole
+import ar.edu.itba.harmos.models.Role
 import ar.edu.itba.harmos.models.Specialty
 import ar.edu.itba.harmos.models.PasswordResetToken
 import ar.edu.itba.harmos.persistence.AppUserRepository
+import ar.edu.itba.harmos.persistence.RoleRepository
 import ar.edu.itba.harmos.persistence.PasswordResetTokenRepository
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -19,6 +22,7 @@ import java.util.UUID
 @Service
 class AppUserService(
     private val appUserRepository: AppUserRepository,
+    private val roleRepository: RoleRepository,
     private val passwordEncoder: PasswordEncoder,
     private val specialtyService: SpecialtyService,
     private val passwordResetTokenRepository: PasswordResetTokenRepository,
@@ -37,6 +41,18 @@ class AppUserService(
         if (specialties.isEmpty()) {
             throw IllegalArgumentException("At least one valid specialty must be provided")
         }
+
+        val rolesList = createAppUserRequest.roles ?: emptyList()
+        var roles: MutableSet<Role> = rolesList.mapNotNull { roleNameRequest ->
+            AppUserRole.fromRoleName(roleNameRequest)?.let { enumRole ->
+                roleRepository.findByRole(enumRole.roleName)
+            }
+        }.toMutableSet()
+
+        if (roles.isEmpty()) {
+            roles = mutableSetOf(roleRepository.findByRole(AppUserRole.DOCTOR.roleName)!!)
+        }
+
         val applicationUser = AppUser(
             createAppUserRequest.email,
             passwordEncoder.encode(createAppUserRequest.password),
@@ -44,7 +60,7 @@ class AppUserService(
             createAppUserRequest.lastName,
             createAppUserRequest.phone,
             specialties,
-            emptySet() //TODO:SETEO DE ROLES
+            roles
         )
         return appUserRepository.save(applicationUser)
     }
