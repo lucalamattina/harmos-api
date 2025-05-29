@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import javax.servlet.http.HttpServletResponse
 
 
 @EnableWebSecurity
@@ -28,24 +29,41 @@ class SecurityConfiguration(
 ) : WebSecurityConfigurerAdapter() {
 
     @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource? {
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration = CorsConfiguration()
+        configuration.allowedOrigins = listOf(
+            "https://harmos-web-0d62e723abba.herokuapp.com",
+            "http://localhost:3000" // Para desarrollo local
+        )
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        configuration.allowedHeaders = listOf("Authorization", "Content-Type", "X-Requested-With")
+        configuration.allowCredentials = true
+        configuration.maxAge = 3600L
+
         val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", CorsConfiguration().applyPermitDefaultValues())
+        source.registerCorsConfiguration("/**", configuration)
         return source
     }
 
     @Throws(java.lang.Exception::class)
     override fun configure(http: HttpSecurity) {
-        http.cors().and().csrf().disable().authorizeRequests()
-            .antMatchers(HttpMethod.POST, AUTHENTICATE_URL).permitAll()
-            //.antMatchers(HttpMethod.POST, "/users").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
-            //.antMatchers(HttpMethod.POST, "/specialties").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
-            .antMatchers(HttpMethod.POST, "/users").permitAll()
-            .antMatchers(HttpMethod.POST, "/specialties").permitAll()
+        http.cors().and().csrf().disable()
+            .exceptionHandling()
+            .authenticationEntryPoint { request, response, authException ->
+                response.status = HttpServletResponse.SC_UNAUTHORIZED
+                response.writer.write("Unauthorized: ${authException.message}")
+            }
+            .and()
+            .authorizeRequests()
+            .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Permitir OPTIONS para CORS
+            .antMatchers(AUTHENTICATE_URL).permitAll() // Permitir cualquier método en /authenticate
+            // Solo los POST requieren rol de administrador
+            .antMatchers(HttpMethod.POST, "/users").hasAuthority("ADMINISTRATOR")
+            .antMatchers(HttpMethod.POST, "/specialties").hasAuthority("ADMINISTRATOR")
             .anyRequest().authenticated()
             .and()
             .addFilter(AuthenticationFilter(authenticationManager(), appUserService))
-            .addFilter(AuthorizationFilter(authenticationManager()))
+            .addFilterAfter(AuthorizationFilter(authenticationManager()), AuthenticationFilter::class.java)
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
     }
 

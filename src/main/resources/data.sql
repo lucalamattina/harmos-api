@@ -66,7 +66,7 @@ INSERT INTO users_roles (app_user_id, roles_id) VALUES
 (16, 1), (17, 1), (18, 1), (19, 1), (20, 1),
 (21, 1), (22, 1), (23, 1), (24, 1), (25, 1),
 (26, 1), (27, 1), (28, 1), (29, 1), (30, 1),
-(31, 1);
+(31, 1), (32, 2); -- El último usuario (noreplyharmos@gmail.com) es administrador
 
 -- Asignar especialidades a usuarios (distribuidas aleatoriamente)
 INSERT INTO user_specialty (user_id, specialty_id) VALUES
@@ -158,7 +158,27 @@ INSERT INTO announcement (id, title, content, date, created_by_id) VALUES
 (2, 'Cambio de Horarios', 'A partir de la próxima semana, los horarios de atención serán de 9:00 a 17:00', CURRENT_TIMESTAMP, 2),
 (3, 'Capacitación', 'Próxima capacitación en nuevas técnicas de rehabilitación', CURRENT_TIMESTAMP, 3),
 (4, 'Mantenimiento', 'El consultorio estará cerrado por mantenimiento el próximo fin de semana', CURRENT_TIMESTAMP, 4),
-(5, 'Nuevo Servicio', 'Se ha implementado un nuevo servicio de telemedicina', CURRENT_TIMESTAMP, 5);
+(5, 'Nuevo Servicio', 'Se ha implementado un nuevo servicio de telemedicina', CURRENT_TIMESTAMP, 5),
+(6, 'Actualización de Protocolos', 'Se han actualizado los protocolos de atención psicológica', CURRENT_TIMESTAMP, 6),
+(7, 'Feriado', 'El consultorio permanecerá cerrado por feriado nacional', CURRENT_TIMESTAMP, 7),
+(8, 'Nuevo Personal', 'Se ha incorporado nuevo personal especializado en terapia ocupacional', CURRENT_TIMESTAMP, 8),
+(9, 'Mejoras en Instalaciones', 'Se han realizado mejoras en las instalaciones de fonoaudiología', CURRENT_TIMESTAMP, 9),
+(10, 'Actualización de Software', 'Se ha actualizado el software de gestión para kinesiología', CURRENT_TIMESTAMP, 10),
+(11, 'Capacitación Interna', 'Se realizará una capacitación interna para el equipo de psicología', CURRENT_TIMESTAMP, 11),
+(12, 'Mantenimiento Preventivo', 'Se realizará mantenimiento preventivo en el área de fisioterapia', CURRENT_TIMESTAMP, 12),
+(13, 'Nuevo Protocolo COVID', 'Se ha implementado un nuevo protocolo COVID para terapia ocupacional', CURRENT_TIMESTAMP, 13),
+(14, 'Cambio de Ubicación', 'El área de fonoaudiología se ha trasladado a un nuevo espacio', CURRENT_TIMESTAMP, 14),
+(15, 'Actualización de Tarifas', 'Se han actualizado las tarifas de los servicios de kinesiología', CURRENT_TIMESTAMP, 15),
+(16, 'Nuevo Equipamiento Kinesiología', 'Se ha adquirido nuevo equipamiento para el área de kinesiología', CURRENT_TIMESTAMP, 16),
+(17, 'Capacitación en Fonoaudiología', 'Se realizará una capacitación especializada en fonoaudiología', CURRENT_TIMESTAMP, 17),
+(18, 'Actualización de Psicología', 'Se han actualizado los métodos de evaluación psicológica', CURRENT_TIMESTAMP, 18),
+(19, 'Mejoras en Fisioterapia', 'Se han implementado mejoras en el área de fisioterapia', CURRENT_TIMESTAMP, 19),
+(20, 'Nuevo Servicio de TO', 'Se ha implementado un nuevo servicio de terapia ocupacional', CURRENT_TIMESTAMP, 20),
+(21, 'Actualización de Equipos', 'Se han actualizado los equipos del área de kinesiología', CURRENT_TIMESTAMP, 21),
+(22, 'Nuevo Personal Especializado', 'Se ha incorporado nuevo personal especializado en fonoaudiología', CURRENT_TIMESTAMP, 22),
+(23, 'Mejoras en Atención', 'Se han implementado mejoras en la atención psicológica', CURRENT_TIMESTAMP, 23),
+(24, 'Actualización de Procedimientos', 'Se han actualizado los procedimientos de fisioterapia', CURRENT_TIMESTAMP, 24),
+(25, 'Nuevo Servicio de Emergencias', 'Se ha implementado un nuevo servicio de emergencias en terapia ocupacional', CURRENT_TIMESTAMP, 25);
 
 -- Asignar especialidades a anuncios
 INSERT INTO announcement_specialty (announcement_id, specialty_id) VALUES

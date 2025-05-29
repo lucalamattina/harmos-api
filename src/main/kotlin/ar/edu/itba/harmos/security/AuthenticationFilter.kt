@@ -43,14 +43,24 @@ class AuthenticationFilter(
         return try {
             val appUser: AppUser =
                 ObjectMapper().readValue(req.inputStream, AppUser::class.java)
+            
+            if (appUser.email.isBlank() || appUser.password.isBlank()) {
+                throw RuntimeException("Email and password are required")
+            }
+            
             authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken(
                     appUser.email,
-                    appUser.password, ArrayList()
+                    appUser.password,
+                    ArrayList()
                 )
             )
         } catch (e: IOException) {
-            throw RuntimeException(e)
+            throw RuntimeException("Invalid request format", e)
+        } catch (e: AuthenticationException) {
+            throw e
+        } catch (e: Exception) {
+            throw RuntimeException("Authentication failed", e)
         }
     }
 
@@ -63,12 +73,17 @@ class AuthenticationFilter(
         val key = Keys.hmacShaKeyFor(KEY.toByteArray())
         val email = (auth.principal as User).username
         val appUser = appUserService.getAppUserByEmail(email) ?: throw RuntimeException("User not found")
+        
         val claims = Jwts.claims().setSubject(appUser.id.toString())
+        claims["email"] = email
+        claims["roles"] = appUser.roles.map { it.role }
+        
         val token = Jwts.builder()
             .setClaims(claims)
             .signWith(key, SignatureAlgorithm.HS512)
             .setExpiration(exp)
             .compact()
+            
         res.addHeader("token", token)
         val tokenResponse = TokenResponse(token, email)
         res.status = HttpStatus.OK.value()
@@ -76,5 +91,16 @@ class AuthenticationFilter(
         res.writer.write(json)
         res.contentType = "application/json"
         res.flushBuffer()
+    }
+
+    @Throws(IOException::class, ServletException::class)
+    override fun unsuccessfulAuthentication(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        failed: AuthenticationException
+    ) {
+        response.status = HttpServletResponse.SC_UNAUTHORIZED
+        response.contentType = "application/json"
+        response.writer.write("{\"error\": \"Authentication failed: ${failed.message}\"}")
     }
 }
