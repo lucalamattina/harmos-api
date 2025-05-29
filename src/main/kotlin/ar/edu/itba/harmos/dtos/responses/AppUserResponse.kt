@@ -9,7 +9,8 @@ data class AppUserResponse (
     val email: String,
     val name: String,
     val phone: String,
-    val specialties: List<String>
+    val specialties: List<String>,
+    val roles: List<String>
 ) {
     companion object {
         fun singleFromModel(appUser: AppUser) : AppUserResponse {
@@ -18,7 +19,8 @@ data class AppUserResponse (
                 appUser.email,
                 appUser.name,
                 appUser.phone,
-                appUser.specialties.map { it.name }.toList()
+                appUser.specialties.map { it.name }.toList(),
+                appUser.roles.map { it.role }.toList()
             )
         }
         fun listFromModel(appUsers: List<AppUser>) : List<AppUserResponse> {

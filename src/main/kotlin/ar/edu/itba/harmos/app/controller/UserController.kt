@@ -5,6 +5,7 @@ import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.ScheduleResponse
 import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.security.annotations.CurrentUser
 import ar.edu.itba.harmos.services.AnnouncementService
 import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.ScheduleService
@@ -26,6 +27,12 @@ class UserController(
     private val specialtyService: SpecialtyService,
     private val passwordResetTokenRepository: PasswordResetTokenRepository
 ) {
+
+    @GetMapping("/me")
+    @ResponseBody
+    fun getCurrentUser(@CurrentUser appUser: AppUser): ResponseEntity<AppUserResponse> {
+        return ResponseEntity.ok(AppUserResponse.singleFromModel(appUser))
+    }
 
     @PostMapping()
     @ResponseBody

@@ -57,7 +57,7 @@ class AuthorizationFilter(authManager: AuthenticationManager) : BasicAuthenticat
                 @Suppress("UNCHECKED_CAST")
                 val roles = (claims["roles"] as List<String>).map { SimpleGrantedAuthority(it) }
 
-                return UsernamePasswordAuthenticationToken(email, null, roles)
+                return UsernamePasswordAuthenticationToken(claims, null, roles)
             } catch (e: Exception) {
                 return null
             }
