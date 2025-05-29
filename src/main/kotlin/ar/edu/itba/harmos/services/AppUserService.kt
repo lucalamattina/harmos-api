@@ -42,14 +42,15 @@ class AppUserService(
             throw IllegalArgumentException("At least one valid specialty must be provided")
         }
 
-        var roles: Set<Role> = createAppUserRequest.roles.mapNotNull { roleNameRequest ->
+        val rolesList = createAppUserRequest.roles ?: emptyList()
+        var roles: MutableSet<Role> = rolesList.mapNotNull { roleNameRequest ->
             AppUserRole.fromRoleName(roleNameRequest)?.let { enumRole ->
                 roleRepository.findByRole(enumRole.roleName)
             }
-        }.toSet()
+        }.toMutableSet()
 
         if (roles.isEmpty()) {
-            roles = setOf(roleRepository.findByRole(AppUserRole.DOCTOR.roleName)!!)
+            roles = mutableSetOf(roleRepository.findByRole(AppUserRole.DOCTOR.roleName)!!)
         }
 
         val applicationUser = AppUser(

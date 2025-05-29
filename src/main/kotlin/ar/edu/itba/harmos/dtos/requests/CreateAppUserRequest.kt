@@ -7,5 +7,5 @@ data class CreateAppUserRequest (
     val lastName: String,
     val phone: String,
     val specialties: List<String>,
-    val roles: List<String>
+    val roles: List<String>? = emptyList()
 )

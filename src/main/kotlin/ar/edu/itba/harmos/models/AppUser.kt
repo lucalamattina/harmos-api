@@ -20,7 +20,7 @@ class AppUser (
     val specialties: MutableSet<Specialty>,
 
     @ManyToMany(fetch = FetchType.EAGER)
-    val roles: Set<Role>,
+    val roles: MutableSet<Role>,
 
     @OneToMany(mappedBy = "createdBy", cascade = [CascadeType.REMOVE], orphanRemoval = true)
     val announcements: List<Announcement> = mutableListOf(),
@@ -32,7 +32,7 @@ class AppUser (
     val name: String
         get() = "$firstName $lastName"
 
-    constructor() : this("","","","","", mutableSetOf(), emptySet())
+    constructor() : this("","","","","", mutableSetOf(), mutableSetOf())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
