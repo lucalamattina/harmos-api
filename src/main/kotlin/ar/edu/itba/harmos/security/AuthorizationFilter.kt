@@ -18,7 +18,8 @@ import javax.servlet.ServletException
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-class AuthorizationFilter(authManager: AuthenticationManager) : BasicAuthenticationFilter(authManager) {
+class AuthorizationFilter(authManager: AuthenticationManager) : BasicAuthenticationFilter(authManager)
+{
     @Throws(IOException::class, ServletException::class)
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain) {
         val header: String? = request.getHeader(HEADER_NAME)
