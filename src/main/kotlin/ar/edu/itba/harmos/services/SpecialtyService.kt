@@ -3,10 +3,16 @@ package ar.edu.itba.harmos.services
 import ar.edu.itba.harmos.dtos.requests.CreateSpecialtyRequest
 import ar.edu.itba.harmos.models.Specialty
 import ar.edu.itba.harmos.persistence.SpecialtyRepository
+import ar.edu.itba.harmos.persistence.AppUserRepository
+import ar.edu.itba.harmos.persistence.AnnouncementRepository
 import org.springframework.stereotype.Service
 
 @Service
-class SpecialtyService(private val specialtyRepository: SpecialtyRepository) {
+class SpecialtyService(
+    private val specialtyRepository: SpecialtyRepository,
+    private val appUserRepository: AppUserRepository,
+    private val announcementRepository: AnnouncementRepository
+) {
 
     fun createSpecialty(createSpecialtyRequest: CreateSpecialtyRequest): Specialty? {
         if (specialtyRepository.findByName(createSpecialtyRequest.name) != null) {
@@ -36,19 +42,12 @@ class SpecialtyService(private val specialtyRepository: SpecialtyRepository) {
         val specialtyOpt = specialtyRepository.findById(id)
         if (!specialtyOpt.isPresent) {
             return false
-        }
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         val specialty = specialtyOpt.get()
-        // Remover de usuarios
-        val users = ar.edu.itba.harmos.persistence.AppUserRepository::class.java.declaredFields
-        // Remover de anuncios
-        // Obtener beans de repositorios
-        val appContext = org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext()
-        val appUserRepository = appContext.getBean(ar.edu.itba.harmos.persistence.AppUserRepository::class.java)
-        val announcementRepository = appContext.getBean(ar.edu.itba.harmos.persistence.AnnouncementRepository::class.java)
         // Remover de usuarios
         appUserRepository.findAll().forEach { user ->
             if (user.specialties.remove(specialty)) {
-                appUserRepository.save(user)
+                appUserRepository.save(user)                                                                                                                                                                                                                                                                                                                            
             }
         }
         // Remover de anuncios
