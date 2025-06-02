@@ -69,4 +69,11 @@ class AnnouncementService(
         return announcementRepository.save(existingAnnouncement)
     }
 
+    fun deleteAnnouncement(id: Long): Boolean {
+        val exists = announcementRepository.existsById(id)
+        if (!exists) return false
+        announcementRepository.deleteById(id)
+        return true
+    }
+
 }

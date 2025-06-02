@@ -29,7 +29,10 @@ interface AppUserRepository : PagingAndSortingRepository<AppUser, Long> {
         pageable: Pageable
     ): Page<AppUser>
 
-    fun findByEmail(email: String): AppUser?
+    @Query("""
+        SELECT u FROM AppUser u WHERE LOWER(u.email) = LOWER(:email)
+    """)
+    fun findByEmail(@Param("email") email: String): AppUser?
 
     fun findBySpecialtiesIn(specialties: List<String>, pageable: Pageable): List<AppUser>
 

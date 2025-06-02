@@ -67,4 +67,14 @@ class AnnouncementController(
         val updatedAnnouncement = announcementService.updateAnnouncement(id, announcement)
         return ResponseEntity.ok(updatedAnnouncement)
     }
+
+    @DeleteMapping("/{id}")
+    fun deleteAnnouncement(@PathVariable id: Long): ResponseEntity<Void> {
+        val deleted = announcementService.deleteAnnouncement(id)
+        return if (deleted) {
+            ResponseEntity(HttpStatus.NO_CONTENT)
+        } else {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
 }

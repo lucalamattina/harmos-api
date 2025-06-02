@@ -33,13 +33,32 @@ class SpecialtyService(private val specialtyRepository: SpecialtyRepository) {
     }
 
     fun deletePatientById(id: Long): Boolean {
-        val specialty = specialtyRepository.findById(id)
-        return if (specialty.isPresent) {
-            specialtyRepository.delete(specialty.get())
-            true
-        } else {
-            false
+        val specialtyOpt = specialtyRepository.findById(id)
+        if (!specialtyOpt.isPresent) {
+            return false
         }
+        val specialty = specialtyOpt.get()
+        // Remover de usuarios
+        val users = ar.edu.itba.harmos.persistence.AppUserRepository::class.java.declaredFields
+        // Remover de anuncios
+        // Obtener beans de repositorios
+        val appContext = org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext()
+        val appUserRepository = appContext.getBean(ar.edu.itba.harmos.persistence.AppUserRepository::class.java)
+        val announcementRepository = appContext.getBean(ar.edu.itba.harmos.persistence.AnnouncementRepository::class.java)
+        // Remover de usuarios
+        appUserRepository.findAll().forEach { user ->
+            if (user.specialties.remove(specialty)) {
+                appUserRepository.save(user)
+            }
+        }
+        // Remover de anuncios
+        announcementRepository.findAll().forEach { announcement ->
+            if (announcement.specialties.remove(specialty)) {
+                announcementRepository.save(announcement)
+            }
+        }
+        specialtyRepository.delete(specialty)
+        return true
     }
     
 }
