@@ -1,6 +1,7 @@
 package ar.edu.itba.harmos.services
 
 import ar.edu.itba.harmos.dtos.requests.CreateAnnouncementRequest
+import ar.edu.itba.harmos.dtos.requests.EditAnnouncementRequest
 import ar.edu.itba.harmos.models.Announcement
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.persistence.AnnouncementRepository
@@ -59,13 +60,19 @@ class AnnouncementService(
         return null
     }
 
-    fun updateAnnouncement(id: Long, updatedAnnouncement: Announcement): Announcement {
+    fun updateAnnouncement(id: Long, editRequest: EditAnnouncementRequest): Announcement {
         val existingAnnouncement = announcementRepository.findById(id)
             .orElseThrow { RuntimeException("Announcement not found with id $id") }
 
-        existingAnnouncement.title = updatedAnnouncement.title
-        existingAnnouncement.content = updatedAnnouncement.content
-
+        editRequest.title?.let { existingAnnouncement.title = it }
+        editRequest.content?.let { existingAnnouncement.content = it }
+        editRequest.specialties?.let { names ->
+            val specialties = names.mapNotNull { specialtyService.getSpecialtyByName(it) }.toMutableSet()
+            if (specialties.isNotEmpty()) {
+                existingAnnouncement.specialties.clear()
+                existingAnnouncement.specialties.addAll(specialties)
+            }
+        }
         return announcementRepository.save(existingAnnouncement)
     }
 

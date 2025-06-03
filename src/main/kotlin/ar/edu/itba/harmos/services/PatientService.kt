@@ -1,6 +1,7 @@
 package ar.edu.itba.harmos.services
 
 import ar.edu.itba.harmos.dtos.requests.CreatePatientRequest
+import ar.edu.itba.harmos.dtos.requests.EditPatientRequest
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.Patient
 import ar.edu.itba.harmos.models.PatientStatus
@@ -149,5 +150,14 @@ class PatientService( private val patientRepository: PatientRepository,
             return true
         }
         return false
+    }
+
+    fun updatePatient(id: Long, editRequest: EditPatientRequest): Patient {
+        val patient = patientRepository.findById(id)
+            .orElseThrow { RuntimeException("Patient not found with id $id") }
+        editRequest.name?.let { patient.name = it }
+        editRequest.phone?.let { patient.phone = it }
+        editRequest.status?.let { patient.status = it }
+        return patientRepository.save(patient)
     }
 }
