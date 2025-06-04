@@ -82,7 +82,7 @@ class AppUserService(
     }
 
 
-    fun findUsersBySpecialties(specialties: List<String>, page: Int, size: Int): List<AppUser> {
+    fun findUsersBySpecialties(specialties: List<Specialty>, page: Int, size: Int): List<AppUser> {
         return appUserRepository.findBySpecialtiesIn(specialties, PageRequest.of(page, size))
     }
 

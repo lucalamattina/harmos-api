@@ -30,10 +30,14 @@ class AnnouncementController(
         if (appUser == null) {
             return ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
-
-        val announcement = announcementService.createAnnouncement(createAnnouncementRequest, appUser)
-            ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
-        return ResponseEntity(AnnouncementResponse.singleFromModel(announcement), HttpStatus.CREATED)
+        return try {
+            val announcement = announcementService.createAnnouncement(createAnnouncementRequest, appUser)
+                ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+            ResponseEntity(AnnouncementResponse.singleFromModel(announcement), HttpStatus.CREATED)
+        } catch (ex: Exception) {
+            ex.printStackTrace() // O usa un logger
+            ResponseEntity(mapOf("error" to (ex.message ?: "Error interno")), HttpStatus.INTERNAL_SERVER_ERROR)
+        }
     }
 
 
