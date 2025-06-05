@@ -14,11 +14,11 @@ class EmailService @Autowired constructor(
     fun sendEmail(to: String, template: EmailTemplate) {
         val message: MimeMessage = mailSender.createMimeMessage()
         val helper = MimeMessageHelper(message, true, "UTF-8")
-        
+
         helper.setTo(to)
         helper.setSubject(template.subject)
         helper.setText(template.body, template.isHtml)
-        
+
         mailSender.send(message)
     }
 
@@ -26,4 +26,5 @@ class EmailService @Autowired constructor(
         val template = EmailTemplate.passwordReset(resetLink)
         sendEmail(to, template)
     }
+
 } 

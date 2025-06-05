@@ -56,10 +56,11 @@ class AnnouncementService(
             notificacionService.crear(notificacion)
 
             // Enviar email
-            val template = EmailTemplate(
-                subject = "Nuevo anuncio: ${announcement.title}",
-                body = "<p>${announcement.content}</p>",
-                isHtml = true
+            val link = "https://tusitio.com/announcements/${savedAnnouncement.id}" // Cambia por el link real de tu frontend
+            val template = EmailTemplate.announcementNotification(
+                announcement.title,
+                announcement.content,
+                link
             )
             emailService.sendEmail(usuario.email, template)
         }

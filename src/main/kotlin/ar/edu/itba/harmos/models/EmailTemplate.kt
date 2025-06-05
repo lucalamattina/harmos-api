@@ -47,5 +47,60 @@ data class EmailTemplate(
                 """.trimIndent()
             )
         }
+
+        fun announcementNotification(
+            announcementTitle: String,
+            announcementContent: String,
+            link: String,
+            author: String? = null,
+            date: String? = null,
+            specialties: String? = null,
+            imageUrl: String? = null
+        ): EmailTemplate {
+            val year = java.time.Year.now()
+            val specialtiesHtml = if (!specialties.isNullOrBlank()) {
+                """<div style=\"font-size: 15px; color: #666; margin-bottom: 12px;\"><strong>Especialidades:</strong> $specialties</div>"""
+            } else ""
+            val authorDateHtml = buildString {
+                if (!date.isNullOrBlank()) append("Publicado el $date")
+                if (!author.isNullOrBlank()) append(" por $author")
+            }
+            val imageHtml = if (!imageUrl.isNullOrBlank()) {
+                """<img src=\"$imageUrl\" alt=\"Imagen del anuncio\" style=\"width:100%;max-height:220px;object-fit:cover;display:block; margin-bottom: 18px; border-radius: 8px;\" />"""
+            } else ""
+
+            return EmailTemplate(
+                subject = "Nuevo anuncio: $announcementTitle",
+                body = """
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <h1 style="color: #10A6AC; margin: 0;">Harmos</h1>
+                        </div>
+                        <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
+                            <h2 style="color: #333; margin-top: 0;">$announcementTitle</h2>
+                            $imageHtml
+                            $specialtiesHtml
+                            <div style="color: #666; margin-bottom: 15px; font-size: 14px;">
+                                $authorDateHtml
+                            </div>
+                            <div style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+                                $announcementContent
+                            </div>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="$link" 
+                                   style="background-color: #10A6AC; color: white; padding: 12px 24px; 
+                                          text-decoration: none; border-radius: 5px; display: inline-block;">
+                                    Ver anuncio completo
+                                </a>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 30px; color: #999; font-size: 12px;">
+                            <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+                            <p>© $year Harmos. Todos los derechos reservados.</p>
+                        </div>
+                    </div>
+                """.trimIndent()
+            )
+        }
     }
 } 
