@@ -1,6 +1,7 @@
 package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.requests.CreateAnnouncementRequest
+import ar.edu.itba.harmos.dtos.requests.EditAnnouncementRequest
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.AppUserResponse
 import ar.edu.itba.harmos.models.Announcement
@@ -29,10 +30,14 @@ class AnnouncementController(
         if (appUser == null) {
             return ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
-
-        val announcement = announcementService.createAnnouncement(createAnnouncementRequest, appUser)
-            ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
-        return ResponseEntity(AnnouncementResponse.singleFromModel(announcement), HttpStatus.CREATED)
+        return try {
+            val announcement = announcementService.createAnnouncement(createAnnouncementRequest, appUser)
+                ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+            ResponseEntity(AnnouncementResponse.singleFromModel(announcement), HttpStatus.CREATED)
+        } catch (ex: Exception) {
+            ex.printStackTrace() // O usa un logger
+            ResponseEntity(mapOf("error" to (ex.message ?: "Error interno")), HttpStatus.INTERNAL_SERVER_ERROR)
+        }
     }
 
 
@@ -62,10 +67,10 @@ class AnnouncementController(
     @PutMapping("/{id}")
     fun updateAnnouncement(
         @PathVariable id: Long,
-        @RequestBody announcement: Announcement
-    ): ResponseEntity<Announcement> {
-        val updatedAnnouncement = announcementService.updateAnnouncement(id, announcement)
-        return ResponseEntity.ok(updatedAnnouncement)
+        @RequestBody editRequest: EditAnnouncementRequest
+    ): ResponseEntity<Any> {
+        val updatedAnnouncement = announcementService.updateAnnouncement(id, editRequest)
+        return ResponseEntity.ok(AnnouncementResponse.singleFromModel(updatedAnnouncement))
     }
 
     @DeleteMapping("/{id}")

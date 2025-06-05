@@ -5,11 +5,11 @@ import javax.persistence.*
 @Entity
 @Table(name = "Patients")
 class Patient(
-    val name: String,
-    val phone: String,
-    
+    var name: String,
+    var phone: String,
+
     @Enumerated(EnumType.STRING)
-    val status: PatientStatus,
+    var status: PatientStatus,
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

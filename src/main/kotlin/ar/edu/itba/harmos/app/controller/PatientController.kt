@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import ar.edu.itba.harmos.dtos.requests.EditPatientRequest
 
 @Validated
 @RestController
@@ -107,6 +108,15 @@ class PatientController(
         } else {
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
+    }
+
+    @PutMapping("/{id}")
+    fun updatePatient(
+        @PathVariable id: Long,
+        @RequestBody editRequest: EditPatientRequest
+    ): ResponseEntity<Any> {
+        val updatedPatient = patientService.updatePatient(id, editRequest)
+        return ResponseEntity.ok(PatientResponse.singleFromModel(updatedPatient))
     }
 
     //TODO: GET FILES PACIENTE
