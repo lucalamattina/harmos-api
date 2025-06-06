@@ -2,10 +2,10 @@ package ar.edu.itba.harmos.dtos.responses
 
 import java.time.LocalDateTime
 
-data class NotificacionResponse(
+data class NotificationResponse(
     val id: Long,
-    val mensaje: String,
-    val leida: Boolean,
-    val fecha: LocalDateTime,
-    val anuncioId: Long?
+    val message: String,
+    val read: Boolean,
+    val date: LocalDateTime,
+    val announcementId: Long?
 ) 

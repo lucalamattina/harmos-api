@@ -4,23 +4,23 @@ import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity
-@Table(name = "notificacion")
-class Notificacion(
+@Table(name = "notification")
+class Notification(
     @Column(nullable = false)
-    val mensaje: String,
+    val message: String,
 
     @Column(nullable = false)
-    val leida: Boolean = false,
+    val read: Boolean = false,
 
     @Column(nullable = false)
-    val fecha: LocalDateTime = LocalDateTime.now(),
+    val date: LocalDateTime = LocalDateTime.now(),
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id")
-    val usuario: AppUser,
+    @JoinColumn(name = "user_id")
+    val user: AppUser,
 
     @Column(nullable = true)
-    val anuncioId: Long? = null,
+    val announcementId: Long? = null,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +31,7 @@ class Notificacion(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
-        other as Notificacion
+        other as Notification
         if (id != other.id) return false
         return true
     }

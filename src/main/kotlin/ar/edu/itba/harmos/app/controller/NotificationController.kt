@@ -4,6 +4,7 @@ import ar.edu.itba.harmos.models.Notification
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.services.NotificationService
 import ar.edu.itba.harmos.security.annotations.CurrentUser
+import ar.edu.itba.harmos.exceptions.UnauthorizedNotificationAccessException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -41,6 +42,36 @@ class NotificationController(
         }
     }
 
+    @GetMapping("/{id}")
+    fun getNotification(
+        @PathVariable id: Long,
+        @CurrentUser user: AppUser?
+    ): ResponseEntity<Any> {
+        if (user == null) {
+            logger.warn("Attempt to access without authenticated user")
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(mapOf("error" to "User not authenticated"))
+        }
+
+        return try {
+            val notification = notificationService.getById(id, user)
+            val response = NotificationResponse(notification.id, notification.message, notification.read, notification.date, notification.announcementId)
+            ResponseEntity.ok(response)
+        } catch (e: UnauthorizedNotificationAccessException) {
+            logger.warn("Access denied: ${e.message}")
+            ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(mapOf("error" to e.message))
+        } catch (e: NoSuchElementException) {
+            logger.warn("Notification not found: $id")
+            ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(mapOf("error" to "Notification not found"))
+        } catch (e: Exception) {
+            logger.error("Error getting notification $id", e)
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(mapOf("error" to "Internal server error"))
+        }
+    }
+
     @PatchMapping("/{id}/read")
     fun markAsRead(
         @PathVariable id: Long,
@@ -59,8 +90,8 @@ class NotificationController(
             val notification = notificationService.markAsRead(id, user)
             val response = NotificationResponse(notification.id, notification.message, notification.read, notification.date, notification.announcementId)
             ResponseEntity.ok(response)
-        } catch (e: IllegalArgumentException) {
-            logger.warn("Access denied: User ${user.id} attempted to mark notification $id as read", e)
+        } catch (e: UnauthorizedNotificationAccessException) {
+            logger.warn("Access denied: ${e.message}")
             ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to e.message))
         } catch (e: NoSuchElementException) {

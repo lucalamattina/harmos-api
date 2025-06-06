@@ -3,6 +3,7 @@ package ar.edu.itba.harmos.services
 import ar.edu.itba.harmos.models.Notification
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.persistence.NotificationRepository
+import ar.edu.itba.harmos.exceptions.UnauthorizedNotificationAccessException
 import org.springframework.stereotype.Service
 import org.slf4j.LoggerFactory
 import javax.transaction.Transactional
@@ -25,23 +26,25 @@ class NotificationService(
         return notificationRepository.findByUser(user)
     }
 
+    fun getById(id: Long, currentUser: AppUser): Notification {
+        logger.debug("Getting notification $id for user ${currentUser.id}")
+        val notification = notificationRepository.findById(id).orElseThrow {
+            NoSuchElementException("Notification with ID $id not found")
+        }
+        
+        if (notification.user.id != currentUser.id) {
+            logger.warn("User ${currentUser.id} attempted to access notification ${notification.id} which belongs to user ${notification.user.id}")
+            throw UnauthorizedNotificationAccessException(notification.id, currentUser.id)
+        }
+        
+        return notification
+    }
+
     @Transactional
     fun markAsRead(id: Long, user: AppUser): Notification {
         logger.debug("Attempting to mark notification $id as read for user ${user.id}")
         
-        val notification = try {
-            notificationRepository.findById(id).orElseThrow {
-                NoSuchElementException("Notification with ID $id not found")
-            }
-        } catch (e: Exception) {
-            logger.error("Error finding notification $id", e)
-            throw e
-        }
-        
-        if (notification.user.id != user.id) {
-            logger.warn("User ${user.id} attempted to access notification ${notification.id} which belongs to user ${notification.user.id}")
-            throw IllegalArgumentException("Notification $id belongs to another user")
-        }
+        val notification = getById(id, user)
 
         if (notification.read) {
             logger.debug("Notification $id was already marked as read")
