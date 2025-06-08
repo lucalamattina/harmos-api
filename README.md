@@ -43,4 +43,22 @@ Para ejecutar la API localmente, sigue estos pasos:
             gradlew.bat bootRun
             ```
 
+## Ejecución Local
+
+Para ejecutar la aplicación con el perfil local:
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+## Repoblación de la Base de Datos
+
+Para repoblar la base de datos con datos de prueba, modifica la variable `app.database.repopulate` en el archivo `src/main/resources/application.properties`:
+
+```properties
+app.database.repopulate=true
+```
+
+Esto limpiará la base de datos y la repoblará con datos de prueba al iniciar la aplicación.
+
 ¡Listo! Con estos pasos, la API de Harmos debería estar ejecutándose localmente utilizando la base de datos configurada con Docker Compose y el perfil `local`.
