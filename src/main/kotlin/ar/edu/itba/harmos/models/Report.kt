@@ -17,7 +17,14 @@ class Report(
     val doctor: AppUser,
 
     @ElementCollection
-    val files: List<String>,
+    @CollectionTable(name = "report_images", joinColumns = [JoinColumn(name = "report_id")])
+    @Column(name = "image_url")
+    var images: MutableList<String> = mutableListOf(),
+
+    @ElementCollection
+    @CollectionTable(name = "report_files", joinColumns = [JoinColumn(name = "report_id")])
+    @Column(name = "file_url")
+    var files: MutableList<String> = mutableListOf(),
 
     val date: LocalDateTime,
 
@@ -28,7 +35,7 @@ class Report(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1,
 ){
-    constructor() : this( "", Patient(), AppUser(), emptyList(), LocalDateTime.now(),  emptyList())
+    constructor() : this( "", Patient(), AppUser(), mutableListOf(), mutableListOf(), LocalDateTime.now(),  emptyList())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

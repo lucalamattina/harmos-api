@@ -1,0 +1,17 @@
+# Configuración de Cloudinary
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:your-cloud-name}
+  api-key: ${CLOUDINARY_API_KEY:your-api-key}
+  api-secret: ${CLOUDINARY_API_SECRET:your-api-secret}
+
+# Configuración para subida de archivos
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+# URL del frontend (cambiar por tu URL real)
+app:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000} 

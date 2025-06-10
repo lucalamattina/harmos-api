@@ -112,4 +112,8 @@ class AnnouncementService(
         announcementRepository.deleteById(id)
         return true
     }
+
+    fun updateAnnouncementFiles(announcement: Announcement): Announcement {
+        return announcementRepository.save(announcement)
+    }
 }
