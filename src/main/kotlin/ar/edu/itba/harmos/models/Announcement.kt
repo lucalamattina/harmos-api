@@ -24,12 +24,22 @@ class Announcement(
 
     @ManyToOne(fetch = FetchType.EAGER)
     val createdBy: AppUser,
+
+    @ElementCollection
+    @CollectionTable(name = "announcement_images", joinColumns = [JoinColumn(name = "announcement_id")])
+    @Column(name = "image_url")
+    var images: MutableList<String> = mutableListOf(),
+
+    @ElementCollection
+    @CollectionTable(name = "announcement_files", joinColumns = [JoinColumn(name = "announcement_id")])
+    @Column(name = "file_url")
+    var files: MutableList<String> = mutableListOf(),
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
-    constructor() : this("","", LocalDateTime.MIN, mutableSetOf(), AppUser()) {
+    constructor() : this("","", LocalDateTime.MIN, mutableSetOf(), AppUser(), mutableListOf(), mutableListOf()) {
 
     }
 

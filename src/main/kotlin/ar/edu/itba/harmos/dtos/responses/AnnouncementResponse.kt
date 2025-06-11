@@ -10,7 +10,9 @@ data class AnnouncementResponse(
     val content: String,
     val date: LocalDateTime,
     val createdByUserId: Long,
-    val specialties: List<Specialty>)
+    val specialties: List<Specialty>,
+    val images: List<String>,
+    val files: List<String>)
 {
     companion object {
         fun singleFromModel(announcement: Announcement) : AnnouncementResponse {
@@ -20,7 +22,9 @@ data class AnnouncementResponse(
                 announcement.content,
                 announcement.date,
                 announcement.createdBy.id,
-                announcement.specialties.toList()
+                announcement.specialties.toList(),
+                announcement.images.toList(),
+                announcement.files.toList()
             )
         }
         fun listFromModel(announcements: List<Announcement>): List<AnnouncementResponse> {

@@ -1,0 +1,331 @@
+{
+  "info": {
+    "name": "Harmos - Cloudinary File Management",
+    "description": "Endpoints para manejo de archivos con Cloudinary",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Upload Image",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/image.jpg"
+            },
+            {
+              "key": "folder",
+              "value": "announcements",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/files/upload/image",
+          "host": ["{{base_url}}"],
+          "path": ["files", "upload", "image"]
+        }
+      }
+    },
+    {
+      "name": "Upload Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/document.pdf"
+            },
+            {
+              "key": "folder",
+              "value": "reports",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/files/upload/document",
+          "host": ["{{base_url}}"],
+          "path": ["files", "upload", "document"]
+        }
+      }
+    },
+    {
+      "name": "Upload Multiple Files",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "files",
+              "type": "file",
+              "src": "/path/to/file1.pdf"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "/path/to/file2.jpg"
+            },
+            {
+              "key": "folder",
+              "value": "announcements",
+              "type": "text"
+            },
+            {
+              "key": "type",
+              "value": "auto",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/files/upload/multiple",
+          "host": ["{{base_url}}"],
+          "path": ["files", "upload", "multiple"]
+        }
+      }
+    },
+    {
+      "name": "Get Transformed Image",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/files/transform?publicId=harmos/announcements/imagen&width=400&height=300&crop=fill",
+          "host": ["{{base_url}}"],
+          "path": ["files", "transform"],
+          "query": [
+            {
+              "key": "publicId",
+              "value": "harmos/announcements/imagen"
+            },
+            {
+              "key": "width",
+              "value": "400"
+            },
+            {
+              "key": "height",
+              "value": "300"
+            },
+            {
+              "key": "crop",
+              "value": "fill"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete File",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/files/delete?publicId=harmos/announcements/imagen&resourceType=image",
+          "host": ["{{base_url}}"],
+          "path": ["files", "delete"],
+          "query": [
+            {
+              "key": "publicId",
+              "value": "harmos/announcements/imagen"
+            },
+            {
+              "key": "resourceType",
+              "value": "image"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Upload Files to Announcement",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "images",
+              "type": "file",
+              "src": "/path/to/image1.jpg"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": "/path/to/image2.png"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "/path/to/document.pdf"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/announcements/1/files",
+          "host": ["{{base_url}}"],
+          "path": ["announcements", "1", "files"]
+        }
+      }
+    },
+    {
+      "name": "Delete File from Announcement",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/announcements/1/files?fileUrl=https://res.cloudinary.com/...&type=image",
+          "host": ["{{base_url}}"],
+          "path": ["announcements", "1", "files"],
+          "query": [
+            {
+              "key": "fileUrl",
+              "value": "https://res.cloudinary.com/tu-cloud/image/upload/v1234567890/harmos/announcements/imagen.jpg"
+            },
+            {
+              "key": "type",
+              "value": "image"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Upload Files to Report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "images",
+              "type": "file",
+              "src": "/path/to/xray.jpg",
+              "description": "Imagen médica (rayos X, resonancia, etc.)"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "/path/to/medical_report.pdf",
+              "description": "Documento médico"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/reports/1/files",
+          "host": ["{{base_url}}"],
+          "path": ["reports", "1", "files"]
+        }
+      }
+    },
+    {
+      "name": "Get Report Files",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/reports/1/files",
+          "host": ["{{base_url}}"],
+          "path": ["reports", "1", "files"]
+        }
+      }
+    },
+    {
+      "name": "Delete File from Report",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/reports/1/files?fileUrl=https://res.cloudinary.com/...&type=image",
+          "host": ["{{base_url}}"],
+          "path": ["reports", "1", "files"],
+          "query": [
+            {
+              "key": "fileUrl",
+              "value": "https://res.cloudinary.com/tu-cloud/image/upload/v1234567890/harmos/reports/xray.jpg"
+            },
+            {
+              "key": "type",
+              "value": "image"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your-jwt-token-here",
+      "type": "string"
+    }
+  ]
+} 

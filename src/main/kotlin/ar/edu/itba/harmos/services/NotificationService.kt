@@ -18,12 +18,12 @@ class NotificationService(
 
     fun getUnread(user: AppUser): List<Notification> {
         logger.debug("Finding unread notifications for user ${user.id}")
-        return notificationRepository.findByUserAndReadFalse(user)
+        return notificationRepository.findByUserAndReadFalseOrderByDateDesc(user)
     }
 
     fun getAll(user: AppUser): List<Notification> {
         logger.debug("Finding all notifications for user ${user.id}")
-        return notificationRepository.findByUser(user)
+        return notificationRepository.findByUserOrderByDateDesc(user)
     }
 
     fun getById(id: Long, currentUser: AppUser): Notification {
@@ -75,6 +75,16 @@ class NotificationService(
         } catch (e: Exception) {
             logger.error("Error creating notification", e)
             throw RuntimeException("Error creating notification", e)
+        }
+    }
+
+    fun createBatch(notifications: List<Notification>): List<Notification> {
+        logger.debug("Creating ${notifications.size} notifications in batch")
+        return try {
+            notificationRepository.saveAll(notifications).toList()
+        } catch (e: Exception) {
+            logger.error("Error creating batch notifications", e)
+            throw RuntimeException("Error creating batch notifications", e)
         }
     }
 } 
