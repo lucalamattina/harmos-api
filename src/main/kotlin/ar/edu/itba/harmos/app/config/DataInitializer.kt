@@ -20,6 +20,7 @@ class DataInitializer(
     private val patientRepository: PatientRepository,
     private val scheduleRepository: ScheduleRepository,
     private val announcementRepository: AnnouncementRepository,
+    private val notificationRepository: NotificationRepository,
     private val passwordEncoder: PasswordEncoder,
     @Value("\${app.database.repopulate:false}") private val repopulateDatabase: Boolean
 ) {
@@ -36,12 +37,14 @@ class DataInitializer(
                 initializePatients()
                 initializeSchedules()
                 initializeAnnouncements()
+                initializeNotifications()
             }
         }
     }
 
     private fun clearDatabase() {
         // Clear tables in reverse order of dependencies
+        notificationRepository.deleteAll()
         announcementRepository.deleteAll()
         scheduleRepository.deleteAll()
         patientRepository.deleteAll()
@@ -156,5 +159,61 @@ class DataInitializer(
             )
         }
         announcementRepository.saveAll(announcements)
+    }
+
+    private fun initializeNotifications() {
+        val users = appUserRepository.findAll().toList()
+        val announcements = announcementRepository.findAll().toList()
+        
+        val notifications = mutableListOf<Notification>()
+        
+        // Create some general notifications for all users
+        users.forEach { user ->
+            notifications.add(
+                Notification(
+                    message = "Welcome to Harmos! Your account has been created successfully.",
+                    read = Random.nextBoolean(),
+                    date = LocalDateTime.now().minusDays(Random.nextLong(1, 7)),
+                    user = user,
+                    announcementId = null
+                )
+            )
+            
+            notifications.add(
+                Notification(
+                    message = "System maintenance scheduled for this weekend. Please save your work.",
+                    read = Random.nextBoolean(),
+                    date = LocalDateTime.now().minusDays(Random.nextLong(0, 3)),
+                    user = user,
+                    announcementId = null
+                )
+            )
+        }
+        
+        // Create notifications related to announcements
+        // Simplified approach: create notifications for a subset of users for each announcement
+        announcements.forEach { announcement ->
+            // Create notifications for random users (simulating specialty-based targeting)
+            val randomUsers = users.shuffled().take(Random.nextInt(5, 15))
+            
+            randomUsers.forEach { user ->
+
+
+                // Don't create notification for the announcement creator
+                if (user.id != announcement.createdBy.id) {
+                    notifications.add(
+                        Notification(
+                            message = "New announcement: ${announcement.title}",
+                            read = Random.nextBoolean(),
+                            date = announcement.date.plusMinutes(Random.nextLong(1, 30)),
+                            user = user,
+                            announcementId = announcement.id
+                        )
+                    )
+                }
+            }
+        }
+        
+
     }
 }

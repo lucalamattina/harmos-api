@@ -15,14 +15,14 @@ import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.EmailService
 import ar.edu.itba.harmos.models.Notification
 import ar.edu.itba.harmos.models.EmailTemplate
+import org.springframework.scheduling.annotation.Async
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AnnouncementService(
     private val announcementRepository: AnnouncementRepository,
     private val specialtyService: SpecialtyService,
-    private val notificationService: NotificationService,
-    private val appUserService: AppUserService,
-    private val emailService: EmailService
+    private val asyncNotificationService: AsyncNotificationService
 ) {
     fun createAnnouncement(createAnnouncementRequest: CreateAnnouncementRequest, createdBy: AppUser): Announcement? {
         var specialties = createAnnouncementRequest.specialties.mapNotNull { specialtyName ->
@@ -42,27 +42,12 @@ class AnnouncementService(
         )
         val savedAnnouncement = announcementRepository.save(announcement)
 
-        // Notify all users that share the specialty
-        val specialtyNames = specialties.map { it.name }
-        val specialtyList = specialties.toList()
-        val users = appUserService.findUsersBySpecialties(specialtyList, 0, 1000)
-        users.forEach { user ->
-            val notification = Notification(
-                message = "New announcement: ${announcement.title}",
-                user = user,
-                announcementId = savedAnnouncement.id
-            )
-            notificationService.create(notification)
-
-            // Send email
-            val link = "https://tusitio.com/announcements/${savedAnnouncement.id}" // Change to your actual frontend URL
-            val template = EmailTemplate.announcementNotification(
-                announcement.title,
-                announcement.content,
-                link
-            )
-            emailService.sendEmail(user.email, template)
-        }
+        // Process notifications asynchronously using separate service
+        asyncNotificationService.processAnnouncementNotificationsAsync(
+            savedAnnouncement, 
+            specialties.toList(), 
+            createdBy
+        )
 
         return savedAnnouncement
     }

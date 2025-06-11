@@ -34,7 +34,14 @@ interface AppUserRepository : PagingAndSortingRepository<AppUser, Long> {
     """)
     fun findByEmail(@Param("email") email: String): AppUser?
 
-    fun findBySpecialtiesIn(specialties: List<Specialty>, pageable: Pageable): List<AppUser>
+    @Query("""
+        SELECT DISTINCT u FROM AppUser u 
+        WHERE EXISTS (
+            SELECT 1 FROM u.specialties s 
+            WHERE s IN :specialties
+        )
+    """)
+    fun findBySpecialtiesIn(@Param("specialties") specialties: List<Specialty>, pageable: Pageable): List<AppUser>
 
     fun findBySpecialtiesInAndIdOrEmail(specialties: List<String>, id: Long?, email: String?): List<AppUser>
 

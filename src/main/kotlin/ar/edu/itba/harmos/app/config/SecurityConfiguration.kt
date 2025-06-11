@@ -35,7 +35,7 @@ class SecurityConfiguration(
             "https://harmos-web-0d62e723abba.herokuapp.com",
             "http://localhost:3000" // Para desarrollo local
         )
-        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
         configuration.allowedHeaders = listOf("Authorization", "Content-Type", "X-Requested-With")
         configuration.allowCredentials = true
         configuration.maxAge = 3600L
