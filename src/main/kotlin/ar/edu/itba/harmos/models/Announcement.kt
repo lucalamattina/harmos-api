@@ -24,7 +24,7 @@ class Announcement(
 
     @ManyToOne(fetch = FetchType.EAGER)
     val createdBy: AppUser,
-
+    
     @ElementCollection
     @CollectionTable(name = "announcement_images", joinColumns = [JoinColumn(name = "announcement_id")])
     @Column(name = "image_url")
