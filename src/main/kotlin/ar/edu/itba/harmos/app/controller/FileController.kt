@@ -24,6 +24,15 @@ class FileController(
             return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
         }
 
+        // Validaciones previas
+        if (file.isEmpty) {
+            return ResponseEntity(mapOf("error" to "El archivo está vacío"), HttpStatus.BAD_REQUEST)
+        }
+        
+        if (file.originalFilename.isNullOrBlank()) {
+            return ResponseEntity(mapOf("error" to "El archivo no tiene un nombre válido"), HttpStatus.BAD_REQUEST)
+        }
+
         return try {
             val imageUrl = cloudinaryService.uploadImage(file, folder)
             val publicId = cloudinaryService.extractPublicId(imageUrl)
@@ -32,15 +41,31 @@ class FileController(
             ResponseEntity(mapOf(
                 "url" to imageUrl,
                 "public_id" to publicId,
-                "variants" to variants
+                "variants" to variants,
+                "filename" to file.originalFilename,
+                "size" to file.size,
+                "contentType" to file.contentType
             ), HttpStatus.OK)
         } catch (e: IllegalArgumentException) {
-            ResponseEntity(mapOf("error" to e.message), HttpStatus.BAD_REQUEST)
+            ResponseEntity(mapOf(
+                "error" to "Validación fallida: ${e.message}",
+                "filename" to file.originalFilename,
+                "size" to file.size,
+                "contentType" to file.contentType
+            ), HttpStatus.BAD_REQUEST)
+        } catch (e: RuntimeException) {
+            e.printStackTrace()
+            ResponseEntity(mapOf(
+                "error" to "Error de Cloudinary: ${e.message}",
+                "filename" to file.originalFilename,
+                "details" to e.cause?.message
+            ), HttpStatus.INTERNAL_SERVER_ERROR)
         } catch (e: Exception) {
-            ResponseEntity(
-                mapOf("error" to "Error al subir la imagen: ${e.message}"),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            )
+            e.printStackTrace()
+            ResponseEntity(mapOf(
+                "error" to "Error inesperado: ${e.javaClass.simpleName} - ${e.message}",
+                "filename" to file.originalFilename
+            ), HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -54,6 +79,15 @@ class FileController(
             return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
         }
 
+        // Validaciones previas
+        if (file.isEmpty) {
+            return ResponseEntity(mapOf("error" to "El archivo está vacío"), HttpStatus.BAD_REQUEST)
+        }
+        
+        if (file.originalFilename.isNullOrBlank()) {
+            return ResponseEntity(mapOf("error" to "El archivo no tiene un nombre válido"), HttpStatus.BAD_REQUEST)
+        }
+
         return try {
             val documentUrl = cloudinaryService.uploadDocument(file, folder)
             val publicId = cloudinaryService.extractPublicId(documentUrl)
@@ -62,15 +96,29 @@ class FileController(
                 "url" to documentUrl,
                 "public_id" to publicId,
                 "filename" to file.originalFilename,
-                "size" to file.size
+                "size" to file.size,
+                "contentType" to file.contentType
             ), HttpStatus.OK)
         } catch (e: IllegalArgumentException) {
-            ResponseEntity(mapOf("error" to e.message), HttpStatus.BAD_REQUEST)
+            ResponseEntity(mapOf(
+                "error" to "Validación fallida: ${e.message}",
+                "filename" to file.originalFilename,
+                "size" to file.size,
+                "contentType" to file.contentType
+            ), HttpStatus.BAD_REQUEST)
+        } catch (e: RuntimeException) {
+            e.printStackTrace()
+            ResponseEntity(mapOf(
+                "error" to "Error de Cloudinary: ${e.message}",
+                "filename" to file.originalFilename,
+                "details" to e.cause?.message
+            ), HttpStatus.INTERNAL_SERVER_ERROR)
         } catch (e: Exception) {
-            ResponseEntity(
-                mapOf("error" to "Error al subir el documento: ${e.message}"),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            )
+            e.printStackTrace()
+            ResponseEntity(mapOf(
+                "error" to "Error inesperado: ${e.javaClass.simpleName} - ${e.message}",
+                "filename" to file.originalFilename
+            ), HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -95,6 +143,17 @@ class FileController(
 
             files.forEach { file ->
                 try {
+                    // Validaciones previas
+                    if (file.isEmpty) {
+                        errors.add("Archivo ${file.originalFilename ?: "sin nombre"}: El archivo está vacío")
+                        return@forEach
+                    }
+                    
+                    if (file.originalFilename.isNullOrBlank()) {
+                        errors.add("Un archivo no tiene nombre válido")
+                        return@forEach
+                    }
+                    
                     val url = when (type) {
                         "image" -> cloudinaryService.uploadImage(file, folder)
                         "document" -> cloudinaryService.uploadDocument(file, folder)
@@ -120,8 +179,14 @@ class FileController(
                     }
                     
                     uploadedFiles.add(fileInfo)
+                } catch (e: IllegalArgumentException) {
+                    errors.add("Archivo ${file.originalFilename}: Validación fallida - ${e.message}")
+                } catch (e: RuntimeException) {
+                    errors.add("Archivo ${file.originalFilename}: Error de Cloudinary - ${e.message}")
+                    e.printStackTrace()
                 } catch (e: Exception) {
-                    errors.add("Error con ${file.originalFilename}: ${e.message}")
+                    errors.add("Archivo ${file.originalFilename}: Error inesperado - ${e.javaClass.simpleName}: ${e.message}")
+                    e.printStackTrace()
                 }
             }
 

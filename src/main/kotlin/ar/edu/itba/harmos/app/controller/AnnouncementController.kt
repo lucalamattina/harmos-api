@@ -108,6 +108,22 @@ class AnnouncementController(
             // Subir imágenes
             images?.forEach { image ->
                 try {
+                    // Validaciones previas
+                    if (image.isEmpty) {
+                        errors.add("Imagen ${image.originalFilename ?: "sin nombre"}: El archivo está vacío")
+                        return@forEach
+                    }
+                    
+                    if (image.originalFilename.isNullOrBlank()) {
+                        errors.add("Una imagen no tiene nombre de archivo válido")
+                        return@forEach
+                    }
+                    
+                    if (image.size > 10 * 1024 * 1024) {
+                        errors.add("Imagen ${image.originalFilename}: El archivo es muy grande (máximo 10MB)")
+                        return@forEach
+                    }
+                    
                     val imageUrl = cloudinaryService.uploadImage(image, "announcements")
                     val publicId = cloudinaryService.extractPublicId(imageUrl)
                     announcement.images.add(imageUrl)
@@ -117,14 +133,35 @@ class AnnouncementController(
                         "public_id" to publicId,
                         "variants" to cloudinaryService.getImageVariants(publicId)
                     ))
+                } catch (e: IllegalArgumentException) {
+                    errors.add("Imagen ${image.originalFilename}: ${e.message}")
+                } catch (e: RuntimeException) {
+                    errors.add("Imagen ${image.originalFilename}: Error de Cloudinary - ${e.message}")
                 } catch (e: Exception) {
-                    errors.add("Error con imagen ${image.originalFilename}: ${e.message}")
+                    errors.add("Imagen ${image.originalFilename}: Error inesperado - ${e.javaClass.simpleName}: ${e.message}")
+                    e.printStackTrace() // Para debugging
                 }
             }
 
             // Subir archivos
             files?.forEach { file ->
                 try {
+                    // Validaciones previas
+                    if (file.isEmpty) {
+                        errors.add("Archivo ${file.originalFilename ?: "sin nombre"}: El archivo está vacío")
+                        return@forEach
+                    }
+                    
+                    if (file.originalFilename.isNullOrBlank()) {
+                        errors.add("Un archivo no tiene nombre válido")
+                        return@forEach
+                    }
+                    
+                    if (file.size > 50 * 1024 * 1024) {
+                        errors.add("Archivo ${file.originalFilename}: El archivo es muy grande (máximo 50MB)")
+                        return@forEach
+                    }
+                    
                     val fileUrl = cloudinaryService.uploadDocument(file, "announcements")
                     val publicId = cloudinaryService.extractPublicId(fileUrl)
                     announcement.files.add(fileUrl)
@@ -134,8 +171,13 @@ class AnnouncementController(
                         "public_id" to publicId,
                         "filename" to (file.originalFilename ?: "unknown")
                     ))
+                } catch (e: IllegalArgumentException) {
+                    errors.add("Archivo ${file.originalFilename}: ${e.message}")
+                } catch (e: RuntimeException) {
+                    errors.add("Archivo ${file.originalFilename}: Error de Cloudinary - ${e.message}")
                 } catch (e: Exception) {
-                    errors.add("Error con archivo ${file.originalFilename}: ${e.message}")
+                    errors.add("Archivo ${file.originalFilename}: Error inesperado - ${e.javaClass.simpleName}: ${e.message}")
+                    e.printStackTrace() // Para debugging
                 }
             }
 

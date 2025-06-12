@@ -38,15 +38,12 @@ class CloudinaryService(
             val uploadParams = ObjectUtils.asMap(
                 "folder", "harmos/$folder",
                 "resource_type", "image",
-                "transformation", ObjectUtils.asMap(
-                    "quality", "auto",
-                    "fetch_format", "auto",
-                    "width", 1200,
-                    "height", 800,
-                    "crop", "limit"
-                ),
-                "overwrite", true,
-                "notification_url", ""
+                "quality", "auto",
+                "fetch_format", "auto",
+                "width", 1200,
+                "height", 800,
+                "crop", "limit",
+                "overwrite", true
             )
             
             val result = cloudinary.uploader().upload(file.bytes, uploadParams)
@@ -160,7 +157,10 @@ class CloudinaryService(
      */
     fun isValidImage(file: MultipartFile): Boolean {
         val allowedTypes = listOf("image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "image/bmp")
-        return file.contentType in allowedTypes && file.size <= 10 * 1024 * 1024 // Max 10MB
+        return !file.isEmpty && 
+               file.contentType in allowedTypes && 
+               file.size <= 10 * 1024 * 1024 && // Max 10MB
+               !file.originalFilename.isNullOrBlank()
     }
     
     /**
@@ -177,6 +177,9 @@ class CloudinaryService(
             "application/vnd.ms-powerpoint",
             "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         )
-        return file.contentType in allowedTypes && file.size <= 50 * 1024 * 1024 // Max 50MB
+        return !file.isEmpty && 
+               file.contentType in allowedTypes && 
+               file.size <= 50 * 1024 * 1024 && // Max 50MB
+               !file.originalFilename.isNullOrBlank()
     }
 } 
