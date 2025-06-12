@@ -94,6 +94,7 @@ class FileController(
             
             ResponseEntity(mapOf(
                 "url" to documentUrl,
+                "download_url" to cloudinaryService.getDownloadUrl(publicId, file.originalFilename),
                 "public_id" to publicId,
                 "filename" to file.originalFilename,
                 "size" to file.size,
@@ -165,10 +166,11 @@ class FileController(
                     }
                     
                     val publicId = cloudinaryService.extractPublicId(url)
+                    val originalFilename = file.originalFilename ?: "unknown"
                     val fileInfo = mutableMapOf<String, Any>(
                         "url" to url,
                         "public_id" to publicId,
-                        "filename" to (file.originalFilename ?: "unknown"),
+                        "filename" to originalFilename,
                         "size" to file.size,
                         "type" to (file.contentType ?: "unknown")
                     )
@@ -176,6 +178,9 @@ class FileController(
                     // Si es imagen, agregar variantes
                     if (cloudinaryService.isValidImage(file)) {
                         fileInfo["variants"] = cloudinaryService.getImageVariants(publicId)
+                    } else {
+                        // Si es documento, agregar URL de descarga
+                        fileInfo["download_url"] = cloudinaryService.getDownloadUrl(publicId, originalFilename)
                     }
                     
                     uploadedFiles.add(fileInfo)

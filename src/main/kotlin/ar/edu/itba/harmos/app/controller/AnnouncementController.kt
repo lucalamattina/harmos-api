@@ -67,6 +67,47 @@ class AnnouncementController(
         } else ResponseEntity(HttpStatus.NOT_FOUND)
     }
 
+    @GetMapping("/{id}/files")
+    fun getAnnouncementFiles(@PathVariable id: Long): ResponseEntity<Any> {
+        val announcement = announcementService.getAnnouncementById(id)
+            ?: return ResponseEntity(mapOf("error" to "Anuncio no encontrado"), HttpStatus.NOT_FOUND)
+
+        try {
+            val imagesWithVariants = announcement.images.map { imageUrl ->
+                val publicId = cloudinaryService.extractPublicId(imageUrl)
+                mapOf(
+                    "url" to imageUrl,
+                    "public_id" to publicId,
+                    "variants" to cloudinaryService.getImageVariants(publicId)
+                )
+            }
+
+            val filesWithInfo = announcement.files.map { fileUrl ->
+                val publicId = cloudinaryService.extractPublicId(fileUrl)
+                val originalFilename = cloudinaryService.extractFilenameFromPublicId(publicId)
+                mapOf(
+                    "url" to fileUrl,
+                    "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename),
+                    "public_id" to publicId,
+                    "filename" to originalFilename
+                )
+            }
+
+            val response = mapOf(
+                "images" to imagesWithVariants,
+                "files" to filesWithInfo,
+                "total" to (announcement.images.size + announcement.files.size)
+            )
+
+            return ResponseEntity(response, HttpStatus.OK)
+        } catch (e: Exception) {
+            return ResponseEntity(
+                mapOf("error" to "Error al obtener archivos: ${e.message}"),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
+    }
+
     @PutMapping("/{id}")
     fun updateAnnouncement(
         @PathVariable id: Long,
@@ -166,10 +207,12 @@ class AnnouncementController(
                     val publicId = cloudinaryService.extractPublicId(fileUrl)
                     announcement.files.add(fileUrl)
                     
+                    val originalFilename = file.originalFilename ?: "unknown"
                     uploadedFiles.add(mapOf(
                         "url" to fileUrl,
+                        "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename),
                         "public_id" to publicId,
-                        "filename" to (file.originalFilename ?: "unknown")
+                        "filename" to originalFilename
                     ))
                 } catch (e: IllegalArgumentException) {
                     errors.add("Archivo ${file.originalFilename}: ${e.message}")

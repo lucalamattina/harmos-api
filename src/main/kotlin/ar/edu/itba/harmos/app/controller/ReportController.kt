@@ -67,10 +67,12 @@ class ReportController(
                     val publicId = cloudinaryService.extractPublicId(fileUrl)
                     report.files.add(fileUrl)
                     
+                    val originalFilename = file.originalFilename ?: "unknown"
                     uploadedFiles.add(mapOf(
                         "url" to fileUrl,
+                        "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename),
                         "public_id" to publicId,
-                        "filename" to (file.originalFilename ?: "unknown"),
+                        "filename" to originalFilename,
                         "size" to file.size
                     ))
                 } catch (e: Exception) {
@@ -175,9 +177,12 @@ class ReportController(
 
             val filesWithInfo = report.files.map { fileUrl ->
                 val publicId = cloudinaryService.extractPublicId(fileUrl)
+                val originalFilename = cloudinaryService.extractFilenameFromPublicId(publicId)
                 mapOf(
                     "url" to fileUrl,
-                    "public_id" to publicId
+                    "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename),
+                    "public_id" to publicId,
+                    "filename" to originalFilename
                 )
             }
 

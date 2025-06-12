@@ -65,10 +65,19 @@ class CloudinaryService(
         }
         
         try {
+            // Generar un public_id que incluya el nombre original del archivo
+            val originalFilename = file.originalFilename ?: "unknown"
+            val fileExtension = originalFilename.substringAfterLast(".", "")
+            val baseName = originalFilename.substringBeforeLast(".")
+            val timestamp = System.currentTimeMillis()
+            val publicId = "harmos/$folder/${baseName}_$timestamp"
+            
             val uploadParams = ObjectUtils.asMap(
-                "folder", "harmos/$folder",
+                "public_id", if (fileExtension.isNotEmpty()) "$publicId.$fileExtension" else publicId,
                 "resource_type", "raw", // Para documentos que no son imágenes
-                "overwrite", true
+                "overwrite", false, // No sobrescribir para evitar conflictos
+                "use_filename", true,
+                "unique_filename", false
             )
             
             val result = cloudinary.uploader().upload(file.bytes, uploadParams)
@@ -109,9 +118,43 @@ class CloudinaryService(
      * Extrae el public_id de una URL de Cloudinary
      */
     fun extractPublicId(url: String): String {
-        val regex = """/v\d+/(.+)\.[^.]+$""".toRegex()
-        val matchResult = regex.find(url)
-        return matchResult?.groupValues?.get(1) ?: ""
+        // Para URLs con versión: https://res.cloudinary.com/cloud/resource_type/upload/v1234567890/path/file.ext
+        val regexWithVersion = """/v\d+/(.+)$""".toRegex()
+        val matchWithVersion = regexWithVersion.find(url)
+        if (matchWithVersion != null) {
+            return matchWithVersion.groupValues[1]
+        }
+        
+        // Para URLs sin versión: https://res.cloudinary.com/cloud/resource_type/upload/path/file.ext
+        val regexWithoutVersion = """/upload/(.+)$""".toRegex()
+        val matchWithoutVersion = regexWithoutVersion.find(url)
+        return matchWithoutVersion?.groupValues?.get(1) ?: ""
+    }
+
+    /**
+     * Extrae el nombre de archivo original desde el public_id
+     */
+    fun extractFilenameFromPublicId(publicId: String): String {
+        // El public_id tiene el formato: harmos/folder/filename_timestamp.ext
+        val filename = publicId.substringAfterLast("/")
+        
+        // Si contiene timestamp, removerlo pero mantener el nombre base y extensión
+        val timestampRegex = """_\d+(\..+)?$""".toRegex()
+        return if (timestampRegex.find(filename) != null) {
+            val baseName = filename.substringBeforeLast("_")
+            val extension = filename.substringAfterLast(".")
+            if (extension != filename) "$baseName.$extension" else baseName
+        } else {
+            filename
+        }
+    }
+
+    /**
+     * Genera una URL de descarga que preserva el nombre original del archivo
+     */
+    fun getDownloadUrl(publicId: String, originalFilename: String? = null): String {
+        val filename = originalFilename ?: extractFilenameFromPublicId(publicId)
+        return "https://res.cloudinary.com/$cloudName/raw/upload/fl_attachment:$filename/$publicId"
     }
     
     /**
