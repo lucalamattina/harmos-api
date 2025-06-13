@@ -67,14 +67,13 @@ class CloudinaryService(
         try {
             // Generar un public_id que incluya el nombre original del archivo
             val originalFilename = file.originalFilename ?: "unknown"
-            val fileExtension = originalFilename.substringAfterLast(".", "")
-            val baseName = originalFilename.substringBeforeLast(".")
+            val sanitizedFilename = originalFilename.replace(Regex("[^a-zA-Z0-9._-]"), "")
+            val timestamp = System.currentTimeMillis()
+            val publicId = "harmos/$folder/${sanitizedFilename}_$timestamp"
             
             val uploadParams = ObjectUtils.asMap(
-                "folder", "harmos/$folder",
+                "public_id", publicId,
                 "resource_type", "raw", // Para documentos que no son imágenes
-                "use_filename", true,
-                "unique_filename", true, // Cloudinary agregará sufijo automáticamente si hay conflicto
                 "overwrite", false
             )
             
@@ -133,18 +132,12 @@ class CloudinaryService(
      * Extrae el nombre de archivo original desde el public_id
      */
     fun extractFilenameFromPublicId(publicId: String): String {
-        // El public_id tiene el formato: harmos/folder/filename.ext o harmos/folder/filename_abc123.ext
+        // El public_id tiene el formato: harmos/folder/filename.ext_timestamp
         val filename = publicId.substringAfterLast("/")
         
-        // Si Cloudinary agregó sufijo único, removerlo pero mantener el nombre base y extensión
-        val cloudinarySuffixRegex = """_[a-zA-Z0-9]{6}(\..+)?$""".toRegex()
-        return if (cloudinarySuffixRegex.find(filename) != null) {
-            val baseName = filename.substringBeforeLast("_")
-            val extension = filename.substringAfterLast(".")
-            if (extension != filename && baseName.isNotEmpty()) "$baseName.$extension" else filename
-        } else {
-            filename
-        }
+        // Remover el timestamp (números al final)
+        val timestampRegex = """_\d+$""".toRegex()
+        return timestampRegex.replace(filename, "")
     }
 
     /**

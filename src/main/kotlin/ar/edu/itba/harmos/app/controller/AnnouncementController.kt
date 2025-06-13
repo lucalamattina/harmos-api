@@ -84,7 +84,23 @@ class AnnouncementController(
 
             val filesWithInfo = announcement.files.map { fileUrl ->
                 val publicId = cloudinaryService.extractPublicId(fileUrl)
-                val originalFilename = cloudinaryService.extractFilenameFromPublicId(publicId)
+                val extractedFilename = cloudinaryService.extractFilenameFromPublicId(publicId)
+                
+                // Si no se puede extraer un nombre válido, usar un nombre genérico basado en la URL
+                val originalFilename = if (extractedFilename.isBlank() || extractedFilename.length < 3) {
+                    val urlPath = fileUrl.substringAfterLast("/")
+                    val extension = when {
+                        fileUrl.contains(".pdf") -> ".pdf"
+                        fileUrl.contains(".doc") -> ".docx"
+                        fileUrl.contains(".xls") -> ".xlsx"
+                        fileUrl.contains(".ppt") -> ".pptx"
+                        else -> ""
+                    }
+                    "documento$extension"
+                } else {
+                    extractedFilename
+                }
+                
                 mapOf(
                     "url" to fileUrl,
                     "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename),

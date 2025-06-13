@@ -13,6 +13,7 @@ import java.time.LocalDateTime
 import ar.edu.itba.harmos.services.NotificationService
 import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.EmailService
+import ar.edu.itba.harmos.services.CloudinaryService
 import ar.edu.itba.harmos.models.Notification
 import ar.edu.itba.harmos.models.EmailTemplate
 import org.springframework.scheduling.annotation.Async
@@ -22,7 +23,8 @@ import org.springframework.transaction.annotation.Transactional
 class AnnouncementService(
     private val announcementRepository: AnnouncementRepository,
     private val specialtyService: SpecialtyService,
-    private val asyncNotificationService: AsyncNotificationService
+    private val asyncNotificationService: AsyncNotificationService,
+    private val cloudinaryService: CloudinaryService
 ) {
     fun createAnnouncement(createAnnouncementRequest: CreateAnnouncementRequest, createdBy: AppUser): Announcement? {
         var specialties = createAnnouncementRequest.specialties.mapNotNull { specialtyName ->
@@ -92,10 +94,38 @@ class AnnouncementService(
     }
 
     fun deleteAnnouncement(id: Long): Boolean {
-        val exists = announcementRepository.existsById(id)
-        if (!exists) return false
-        announcementRepository.deleteById(id)
-        return true
+        val announcement = getAnnouncementById(id) ?: return false
+        
+        try {
+            // Eliminar imágenes de Cloudinary
+            announcement.images.forEach { imageUrl ->
+                try {
+                    val publicId = cloudinaryService.extractPublicId(imageUrl)
+                    cloudinaryService.deleteFile(publicId, "image")
+                } catch (e: Exception) {
+                    // Log error but continue with deletion
+                    println("Error deleting image from Cloudinary: ${e.message}")
+                }
+            }
+            
+            // Eliminar archivos de Cloudinary
+            announcement.files.forEach { fileUrl ->
+                try {
+                    val publicId = cloudinaryService.extractPublicId(fileUrl)
+                    cloudinaryService.deleteFile(publicId, "raw")
+                } catch (e: Exception) {
+                    // Log error but continue with deletion
+                    println("Error deleting file from Cloudinary: ${e.message}")
+                }
+            }
+            
+            // Eliminar anuncio de la base de datos
+            announcementRepository.deleteById(id)
+            return true
+        } catch (e: Exception) {
+            println("Error deleting announcement: ${e.message}")
+            return false
+        }
     }
 
     fun updateAnnouncementFiles(announcement: Announcement): Announcement {
