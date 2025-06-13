@@ -135,9 +135,15 @@ class CloudinaryService(
         // El public_id tiene el formato: harmos/folder/filename.ext_timestamp
         val filename = publicId.substringAfterLast("/")
         
-        // Remover el timestamp (números al final)
-        val timestampRegex = """_\d+$""".toRegex()
-        return timestampRegex.replace(filename, "")
+        // Buscar el patrón filename.ext_timestamp y extraer solo filename.ext
+        val timestampRegex = """^(.+)_\d+$""".toRegex()
+        val matchResult = timestampRegex.find(filename)
+        
+        return if (matchResult != null) {
+            matchResult.groupValues[1] // Devuelve solo la parte antes del _timestamp
+        } else {
+            filename // Si no hay timestamp, devolver tal como está
+        }
     }
 
     /**

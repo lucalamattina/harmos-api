@@ -97,14 +97,18 @@ class AnnouncementService(
         val announcement = getAnnouncementById(id) ?: return false
         
         try {
+            println("Deleting announcement $id with ${announcement.images.size} images and ${announcement.files.size} files")
+            
             // Eliminar imágenes de Cloudinary
             announcement.images.forEach { imageUrl ->
                 try {
                     val publicId = cloudinaryService.extractPublicId(imageUrl)
-                    cloudinaryService.deleteFile(publicId, "image")
+                    println("Attempting to delete image with publicId: $publicId")
+                    val deleted = cloudinaryService.deleteFile(publicId, "image")
+                    println("Image deletion result: $deleted")
                 } catch (e: Exception) {
-                    // Log error but continue with deletion
                     println("Error deleting image from Cloudinary: ${e.message}")
+                    e.printStackTrace()
                 }
             }
             
@@ -112,18 +116,23 @@ class AnnouncementService(
             announcement.files.forEach { fileUrl ->
                 try {
                     val publicId = cloudinaryService.extractPublicId(fileUrl)
-                    cloudinaryService.deleteFile(publicId, "raw")
+                    println("Attempting to delete file with publicId: $publicId")
+                    val deleted = cloudinaryService.deleteFile(publicId, "raw")
+                    println("File deletion result: $deleted")
                 } catch (e: Exception) {
-                    // Log error but continue with deletion
                     println("Error deleting file from Cloudinary: ${e.message}")
+                    e.printStackTrace()
                 }
             }
             
             // Eliminar anuncio de la base de datos
+            println("Deleting announcement from database")
             announcementRepository.deleteById(id)
+            println("Announcement $id deleted successfully")
             return true
         } catch (e: Exception) {
             println("Error deleting announcement: ${e.message}")
+            e.printStackTrace()
             return false
         }
     }
