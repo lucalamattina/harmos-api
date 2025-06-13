@@ -69,15 +69,13 @@ class CloudinaryService(
             val originalFilename = file.originalFilename ?: "unknown"
             val fileExtension = originalFilename.substringAfterLast(".", "")
             val baseName = originalFilename.substringBeforeLast(".")
-            val timestamp = System.currentTimeMillis()
-            val publicId = "harmos/$folder/${baseName}_$timestamp"
             
             val uploadParams = ObjectUtils.asMap(
-                "public_id", if (fileExtension.isNotEmpty()) "$publicId.$fileExtension" else publicId,
+                "folder", "harmos/$folder",
                 "resource_type", "raw", // Para documentos que no son imágenes
-                "overwrite", false, // No sobrescribir para evitar conflictos
                 "use_filename", true,
-                "unique_filename", false
+                "unique_filename", true, // Cloudinary agregará sufijo automáticamente si hay conflicto
+                "overwrite", false
             )
             
             val result = cloudinary.uploader().upload(file.bytes, uploadParams)
@@ -135,15 +133,15 @@ class CloudinaryService(
      * Extrae el nombre de archivo original desde el public_id
      */
     fun extractFilenameFromPublicId(publicId: String): String {
-        // El public_id tiene el formato: harmos/folder/filename_timestamp.ext
+        // El public_id tiene el formato: harmos/folder/filename.ext o harmos/folder/filename_abc123.ext
         val filename = publicId.substringAfterLast("/")
         
-        // Si contiene timestamp, removerlo pero mantener el nombre base y extensión
-        val timestampRegex = """_\d+(\..+)?$""".toRegex()
-        return if (timestampRegex.find(filename) != null) {
+        // Si Cloudinary agregó sufijo único, removerlo pero mantener el nombre base y extensión
+        val cloudinarySuffixRegex = """_[a-zA-Z0-9]{6}(\..+)?$""".toRegex()
+        return if (cloudinarySuffixRegex.find(filename) != null) {
             val baseName = filename.substringBeforeLast("_")
             val extension = filename.substringAfterLast(".")
-            if (extension != filename) "$baseName.$extension" else baseName
+            if (extension != filename && baseName.isNotEmpty()) "$baseName.$extension" else filename
         } else {
             filename
         }
@@ -220,8 +218,17 @@ class CloudinaryService(
             "application/vnd.ms-powerpoint",
             "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         )
+        
+        // Validar por content-type
+        val contentTypeValid = file.contentType in allowedTypes
+        
+        // Validar por extensión como fallback
+        val filename = file.originalFilename?.lowercase() ?: ""
+        val allowedExtensions = listOf(".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx", ".ppt", ".pptx")
+        val extensionValid = allowedExtensions.any { filename.endsWith(it) }
+        
         return !file.isEmpty && 
-               file.contentType in allowedTypes && 
+               (contentTypeValid || extensionValid) && // Aceptar si content-type O extensión son válidos
                file.size <= 50 * 1024 * 1024 && // Max 50MB
                !file.originalFilename.isNullOrBlank()
     }
