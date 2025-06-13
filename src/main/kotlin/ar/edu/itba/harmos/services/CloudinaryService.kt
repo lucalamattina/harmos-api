@@ -67,15 +67,47 @@ class CloudinaryService(
         try {
             // Generar un public_id que incluya el nombre original del archivo
             val originalFilename = file.originalFilename ?: "unknown"
-            val sanitizedFilename = originalFilename.replace(Regex("[^a-zA-Z0-9._-]"), "")
+            val fileExtension = originalFilename.substringAfterLast(".", "").lowercase()
+            val baseFilename = originalFilename.substringBeforeLast(".")
+            val sanitizedBasename = baseFilename.replace(Regex("[^a-zA-Z0-9._-]"), "")
             val timestamp = System.currentTimeMillis()
-            val publicId = "harmos/$folder/${sanitizedFilename}_$timestamp"
             
-            val uploadParams = ObjectUtils.asMap(
-                "public_id", publicId,
-                "resource_type", "raw", // Para documentos que no son imágenes
-                "overwrite", false
-            )
+            // Usar estrategia diferente según el tipo de archivo
+            val uploadParams = when (fileExtension) {
+                "pdf" -> {
+                    // Para PDFs, usar resource_type auto para mejor detección
+                    ObjectUtils.asMap(
+                        "public_id", "harmos/$folder/${sanitizedBasename}_$timestamp",
+                        "resource_type", "auto",
+                        "format", "pdf",
+                        "overwrite", false,
+                        "use_filename", true,
+                        "unique_filename", false
+                    )
+                }
+                "doc", "docx" -> {
+                    // Para archivos de Word, usar resource_type auto para mejor detección
+                    ObjectUtils.asMap(
+                        "public_id", "harmos/$folder/${sanitizedBasename}_$timestamp",
+                        "resource_type", "auto",
+                        "format", fileExtension,
+                        "overwrite", false,
+                        "use_filename", true,
+                        "unique_filename", false
+                    )
+                }
+                else -> {
+                    // Para otros documentos, mantener como raw pero con más información
+                    ObjectUtils.asMap(
+                        "public_id", "harmos/$folder/${sanitizedBasename}_$timestamp.$fileExtension",
+                        "resource_type", "raw",
+                        "format", fileExtension,
+                        "overwrite", false,
+                        "use_filename", true,
+                        "unique_filename", false
+                    )
+                }
+            }
             
             val result = cloudinary.uploader().upload(file.bytes, uploadParams)
             return result["secure_url"] as String
@@ -132,18 +164,57 @@ class CloudinaryService(
      * Extrae el nombre de archivo original desde el public_id
      */
     fun extractFilenameFromPublicId(publicId: String): String {
-        // El public_id tiene el formato: harmos/folder/filename.ext_timestamp
+        // El public_id puede tener diferentes formatos:
+        // 1. harmos/folder/filename_timestamp (para PDFs/Word con resource_type auto)
+        // 2. harmos/folder/filename_timestamp.ext (para otros documentos)
         val filename = publicId.substringAfterLast("/")
         
-        // Buscar el patrón filename.ext_timestamp y extraer solo filename.ext
-        val timestampRegex = """^(.+)_\d+$""".toRegex()
+        // Buscar el patrón filename_timestamp o filename_timestamp.ext
+        val timestampRegex = """^(.+)_\d+(\..+)?$""".toRegex()
         val matchResult = timestampRegex.find(filename)
         
         return if (matchResult != null) {
-            matchResult.groupValues[1] // Devuelve solo la parte antes del _timestamp
+            val baseName = matchResult.groupValues[1] // Parte antes del timestamp
+            val extension = matchResult.groupValues[2] // Extensión si existe
+            
+            // Si no hay extensión en el public_id (archivos con resource_type "auto")
+            if (extension.isEmpty()) {
+                baseName // Devolver solo el nombre base, la extensión se inferirá del contexto de la URL
+            } else {
+                "$baseName$extension"
+            }
         } else {
             filename // Si no hay timestamp, devolver tal como está
         }
+    }
+    
+    /**
+     * Extrae el nombre de archivo original y detecta el tipo desde URL de Cloudinary
+     */
+    fun extractFilenameFromUrl(url: String): String {
+        val publicId = extractPublicId(url)
+        val baseFilename = extractFilenameFromPublicId(publicId)
+        
+        // Si el archivo no tiene extensión, intentar detectarla desde la URL
+        if (!baseFilename.contains(".")) {
+            return when {
+                url.contains("/image/upload/") -> "$baseFilename.jpg" // Probablemente imagen
+                url.contains("/video/upload/") -> "$baseFilename.mp4" // Probablemente video
+                url.contains("/raw/upload/") -> {
+                    // Para archivos raw, intentar detectar desde el contenido de la URL
+                    when {
+                        url.contains("pdf") -> "$baseFilename.pdf"
+                        url.contains("doc") -> "$baseFilename.docx"
+                        url.contains("xls") -> "$baseFilename.xlsx"
+                        url.contains("ppt") -> "$baseFilename.pptx"
+                        else -> "$baseFilename.pdf" // Por defecto PDF
+                    }
+                }
+                else -> "$baseFilename.pdf" // Por defecto PDF
+            }
+        }
+        
+        return baseFilename
     }
 
     /**

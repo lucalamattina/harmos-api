@@ -177,7 +177,7 @@ class ReportController(
 
             val filesWithInfo = report.files.map { fileUrl ->
                 val publicId = cloudinaryService.extractPublicId(fileUrl)
-                val originalFilename = cloudinaryService.extractFilenameFromPublicId(publicId)
+                val originalFilename = cloudinaryService.extractFilenameFromUrl(fileUrl)
                 mapOf(
                     "url" to fileUrl,
                     "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename),
