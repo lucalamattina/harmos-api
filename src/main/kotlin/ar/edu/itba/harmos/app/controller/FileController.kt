@@ -261,4 +261,95 @@ class FileController(
             )
         }
     }
+
+    @GetMapping("/test/connection")
+    fun testCloudinaryConnection(@CurrentUser appUser: AppUser?): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+        
+        val connectionTest = cloudinaryService.testConnection()
+        return ResponseEntity(connectionTest, HttpStatus.OK)
+    }
+    
+    @GetMapping("/test/urls")
+    fun testUrlGeneration(
+        @RequestParam("publicId") publicId: String,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+        
+        val urlTest = cloudinaryService.testUrlGeneration(publicId)
+        return ResponseEntity(urlTest, HttpStatus.OK)
+    }
+
+    @GetMapping("/test/signed")
+    fun testSignedUrls(
+        @RequestParam("publicId") publicId: String,
+        @RequestParam("filename") filename: String,
+        @RequestParam("resourceType", defaultValue = "raw") resourceType: String,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+        
+        try {
+            val signedUrl = cloudinaryService.getSignedUrl(publicId, resourceType)
+            val signedDownloadUrl = cloudinaryService.getSignedDownloadUrl(publicId, filename, resourceType)
+            
+            val response = mapOf(
+                "public_id" to publicId,
+                "filename" to filename,
+                "resource_type" to resourceType,
+                "signed_url" to signedUrl,
+                "signed_download_url" to signedDownloadUrl
+            )
+            
+            return ResponseEntity(response, HttpStatus.OK)
+        } catch (e: Exception) {
+            return ResponseEntity(
+                mapOf("error" to "Error generando URLs firmadas: ${e.message}"),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
+    }
+
+    @GetMapping("/test/preview")
+    fun testDocumentPreview(
+        @RequestParam("publicId") publicId: String,
+        @RequestParam("filename") filename: String,
+        @RequestParam("resourceType", defaultValue = "raw") resourceType: String,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+        
+        try {
+            val documentType = cloudinaryService.getDocumentType(filename)
+            val response = mutableMapOf<String, Any>(
+                "public_id" to publicId,
+                "filename" to filename,
+                "document_type" to documentType,
+                "resource_type" to resourceType
+            )
+            
+            // Generar URLs de preview si es un documento soportado
+            if (documentType in listOf("pdf", "word", "excel", "powerpoint")) {
+                response["preview_url"] = cloudinaryService.getDocumentPreviewUrl(publicId, null)
+                response["thumbnail_url"] = cloudinaryService.getDocumentThumbnail(publicId, null)
+                response["pages"] = cloudinaryService.getDocumentPages(publicId, null, 5)
+            }
+            
+            return ResponseEntity(response, HttpStatus.OK)
+        } catch (e: Exception) {
+            return ResponseEntity(
+                mapOf("error" to "Error generando preview: ${e.message}"),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
+    }
 } 

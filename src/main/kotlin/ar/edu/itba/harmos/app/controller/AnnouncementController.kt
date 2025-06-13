@@ -85,13 +85,29 @@ class AnnouncementController(
             val filesWithInfo = announcement.files.map { fileUrl ->
                 val publicId = cloudinaryService.extractPublicId(fileUrl)
                 val originalFilename = cloudinaryService.extractFilenameFromUrl(fileUrl)
+                val resourceType = if (fileUrl.contains("/image/upload/")) "image" else "raw"
+                val documentType = cloudinaryService.getDocumentType(originalFilename)
                 
-                mapOf(
+                val fileInfo = mutableMapOf<String, Any>(
                     "url" to fileUrl,
-                    "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename),
+                    "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename, fileUrl),
+                    "direct_url" to cloudinaryService.getDirectUrl(publicId, fileUrl),
+                    "signed_url" to cloudinaryService.getSignedUrl(publicId, resourceType),
+                    "signed_download_url" to cloudinaryService.getSignedDownloadUrl(publicId, originalFilename, resourceType),
                     "public_id" to publicId,
-                    "filename" to originalFilename
+                    "filename" to originalFilename,
+                    "resource_type" to resourceType,
+                    "document_type" to documentType
                 )
+                
+                // Agregar previews para documentos (no para imágenes)
+                if (documentType in listOf("pdf", "word", "excel", "powerpoint")) {
+                    fileInfo["preview_url"] = cloudinaryService.getDocumentPreviewUrl(publicId, fileUrl)
+                    fileInfo["thumbnail_url"] = cloudinaryService.getDocumentThumbnail(publicId, fileUrl)
+                    fileInfo["pages"] = cloudinaryService.getDocumentPages(publicId, fileUrl, 3) // Máximo 3 páginas
+                }
+                
+                fileInfo.toMap()
             }
 
             val response = mapOf(
@@ -211,7 +227,8 @@ class AnnouncementController(
                     val originalFilename = file.originalFilename ?: "unknown"
                     uploadedFiles.add(mapOf(
                         "url" to fileUrl,
-                        "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename),
+                        "download_url" to cloudinaryService.getDownloadUrl(publicId, originalFilename, fileUrl),
+                        "direct_url" to cloudinaryService.getDirectUrl(publicId, fileUrl),
                         "public_id" to publicId,
                         "filename" to originalFilename
                     ))
