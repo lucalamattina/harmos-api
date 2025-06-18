@@ -212,29 +212,4 @@ class ReportController(
             )
         }
     }
-
-    // ========================= PATIENT-SPECIFIC ENDPOINTS =========================
-
-    @GetMapping("/patient/{patientId}")
-    @ResponseBody
-    fun getReportsByPatient(
-        @PathVariable patientId: Long,
-        @RequestParam(required = false) specialtyId: Long?,
-        @CurrentUser appUser: AppUser?
-    ): ResponseEntity<Any> {
-        if (appUser == null) {
-            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
-        }
-
-        return try {
-            val reports = reportService.getReportsForDoctor(appUser, patientId, specialtyId)
-            val response = ReportResponse.listFromModel(reports, cloudinaryService)
-            ResponseEntity.ok(response)
-        } catch (e: Exception) {
-            ResponseEntity(
-                mapOf("error" to "Error al obtener reportes del paciente: ${e.message}"),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            )
-        }
-    }
 } 

@@ -1,25 +1,31 @@
 package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.requests.CreatePatientRequest
+import ar.edu.itba.harmos.dtos.requests.EditPatientRequest
 import ar.edu.itba.harmos.dtos.responses.PatientResponse
+import ar.edu.itba.harmos.dtos.responses.ReportResponse
+import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.PatientStatus
-import ar.edu.itba.harmos.services.PatientService
+import ar.edu.itba.harmos.security.annotations.CurrentUser
 import ar.edu.itba.harmos.services.AppUserService
+import ar.edu.itba.harmos.services.CloudinaryService
+import ar.edu.itba.harmos.services.PatientService
+import ar.edu.itba.harmos.services.ReportService
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import ar.edu.itba.harmos.dtos.requests.EditPatientRequest
 
 @Validated
 @RestController
 @RequestMapping("/patients")
 class PatientController(
     private val patientService: PatientService,
-    private val appUserService: AppUserService
+    private val appUserService: AppUserService,
+    private val reportService: ReportService,
+    private val cloudinaryService: CloudinaryService
 ) {
 
     @GetMapping("/statuses")
@@ -117,6 +123,38 @@ class PatientController(
     ): ResponseEntity<Any> {
         val updatedPatient = patientService.updatePatient(id, editRequest)
         return ResponseEntity.ok(PatientResponse.singleFromModel(updatedPatient))
+    }
+
+    @GetMapping("/{patientId}/reports")
+    @ResponseBody
+    fun getPatientReports(
+        @PathVariable patientId: Long,
+        @RequestParam(required = false) specialtyId: Long?,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+
+        // Verificar que el paciente existe
+        val patient = patientService.getPatientById(patientId)
+            ?: return ResponseEntity(mapOf("error" to "Paciente no encontrado"), HttpStatus.NOT_FOUND)
+
+        // Verificar que el doctor tiene acceso al paciente
+        if (!patient.doctors.contains(appUser)) {
+            return ResponseEntity(mapOf("error" to "No tienes acceso a este paciente"), HttpStatus.FORBIDDEN)
+        }
+
+        return try {
+            val reports = reportService.getReportsForDoctor(appUser, patientId, specialtyId)
+            val response = ReportResponse.listFromModel(reports, cloudinaryService)
+            ResponseEntity.ok(response)
+        } catch (e: Exception) {
+            ResponseEntity(
+                mapOf("error" to "Error al obtener reportes del paciente: ${e.message}"),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
     }
 
     //TODO: GET FILES PACIENTE
