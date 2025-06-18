@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "Reports")
 class Report(
-    val status: String,
+    val title: String,
 
     @ManyToOne
     @JoinColumn(name = "patient_id")
@@ -16,26 +16,20 @@ class Report(
     @JoinColumn(name = "doctor_id")
     val doctor: AppUser,
 
-    @ElementCollection
-    @CollectionTable(name = "report_images", joinColumns = [JoinColumn(name = "report_id")])
-    @Column(name = "image_url")
-    var images: MutableList<String> = mutableListOf(),
+    @ManyToOne
+    @JoinColumn(name = "specialty_id")
+    val specialty: Specialty,
 
-    @ElementCollection
-    @CollectionTable(name = "report_files", joinColumns = [JoinColumn(name = "report_id")])
     @Column(name = "file_url")
-    var files: MutableList<String> = mutableListOf(),
+    val fileUrl: String,
 
-    val date: LocalDateTime,
-
-    @OneToMany(mappedBy = "report", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val comments: List<Comment>,
+    val date: LocalDateTime = LocalDateTime.now(),
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1,
 ){
-    constructor() : this( "", Patient(), AppUser(), mutableListOf(), mutableListOf(), LocalDateTime.now(),  emptyList())
+    constructor() : this( "", Patient(), AppUser(), Specialty(), "", LocalDateTime.now())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
