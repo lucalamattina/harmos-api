@@ -144,10 +144,74 @@ class ReportService(
     // ========================= PAGINATED METHODS =========================
 
     /**
-     * Get all reports with pagination (for admins)
+     * Get all reports with pagination and optional filters (for admins)
      */
-    fun getAllReportsPaginated(pageable: Pageable): Page<Report> {
-        return reportRepository.findAllByOrderByDateDesc(pageable)
+    fun getAllReportsPaginated(
+        patientId: Long? = null,
+        specialtyId: Long? = null,
+        doctorId: Long? = null,
+        title: String? = null,
+        pageable: Pageable
+    ): Page<Report> {
+        val titleFilter = if (title.isNullOrBlank()) null else title.trim()
+        
+        return when {
+            // All filters
+            titleFilter != null && patientId != null && specialtyId != null && doctorId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndSpecialtyIdAndDoctorIdOrderByDateDesc(titleFilter, patientId, specialtyId, doctorId, pageable)
+            }
+            // Title + 2 other filters
+            titleFilter != null && patientId != null && specialtyId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndSpecialtyIdOrderByDateDesc(titleFilter, patientId, specialtyId, pageable)
+            }
+            titleFilter != null && patientId != null && doctorId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndDoctorIdOrderByDateDesc(titleFilter, patientId, doctorId, pageable)
+            }
+            titleFilter != null && specialtyId != null && doctorId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndSpecialtyIdAndDoctorIdOrderByDateDesc(titleFilter, specialtyId, doctorId, pageable)
+            }
+            // 3 filters without title
+            patientId != null && specialtyId != null && doctorId != null -> {
+                reportRepository.findByPatientIdAndSpecialtyIdAndDoctorIdOrderByDateDesc(patientId, specialtyId, doctorId, pageable)
+            }
+            // Title + 1 other filter
+            titleFilter != null && patientId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdOrderByDateDesc(titleFilter, patientId, pageable)
+            }
+            titleFilter != null && specialtyId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndSpecialtyIdOrderByDateDesc(titleFilter, specialtyId, pageable)
+            }
+            titleFilter != null && doctorId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndDoctorIdOrderByDateDesc(titleFilter, doctorId, pageable)
+            }
+            // 2 filters without title
+            patientId != null && specialtyId != null -> {
+                reportRepository.findByPatientIdAndSpecialtyIdOrderByDateDesc(patientId, specialtyId, pageable)
+            }
+            patientId != null && doctorId != null -> {
+                reportRepository.findByPatientIdAndDoctorIdOrderByDateDesc(patientId, doctorId, pageable)
+            }
+            specialtyId != null && doctorId != null -> {
+                reportRepository.findBySpecialtyIdAndDoctorIdOrderByDateDesc(specialtyId, doctorId, pageable)
+            }
+            // Single filters
+            titleFilter != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseOrderByDateDesc(titleFilter, pageable)
+            }
+            patientId != null -> {
+                reportRepository.findByPatientIdOrderByDateDesc(patientId, pageable)
+            }
+            specialtyId != null -> {
+                reportRepository.findBySpecialtyIdOrderByDateDesc(specialtyId, pageable)
+            }
+            doctorId != null -> {
+                reportRepository.findByDoctorIdOrderByDateDesc(doctorId, pageable)
+            }
+            // No filters
+            else -> {
+                reportRepository.findAllByOrderByDateDesc(pageable)
+            }
+        }
     }
 
     /**
@@ -156,25 +220,47 @@ class ReportService(
     fun getReportsForDoctorPaginated(
         doctor: AppUser, 
         patientId: Long? = null, 
-        specialtyId: Long? = null, 
+        specialtyId: Long? = null,
+        doctorId: Long? = null,
+        title: String? = null,
         pageable: Pageable
     ): Page<Report> {
+        val titleFilter = if (title.isNullOrBlank()) null else title.trim()
+        
+        // If doctorId is not specified, default to the current doctor's reports
+        val effectiveDoctorId = doctorId ?: doctor.id
+        
         return when {
-            patientId != null && specialtyId != null -> {
-                // For specific patient and specialty, get all reports and filter accessible ones
-                // This is less efficient but necessary for the access control logic
-                val reports = reportRepository.findByPatientIdAndSpecialtyIdOrderByDateDesc(patientId, specialtyId, pageable)
-                // Note: This filtering approach has limitations with pagination
-                // For production, consider creating specific repository methods with doctor access filters
-                reports
+            // All filters
+            titleFilter != null && patientId != null && specialtyId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndSpecialtyIdAndDoctorIdOrderByDateDesc(titleFilter, patientId, specialtyId, effectiveDoctorId, pageable)
             }
+            // Title + 1 other filter + doctorId
+            titleFilter != null && patientId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndDoctorIdOrderByDateDesc(titleFilter, patientId, effectiveDoctorId, pageable)
+            }
+            titleFilter != null && specialtyId != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndSpecialtyIdAndDoctorIdOrderByDateDesc(titleFilter, specialtyId, effectiveDoctorId, pageable)
+            }
+            // 2 filters + doctorId (without title)
+            patientId != null && specialtyId != null -> {
+                reportRepository.findByPatientIdAndSpecialtyIdAndDoctorIdOrderByDateDesc(patientId, specialtyId, effectiveDoctorId, pageable)
+            }
+            // Title + doctorId only
+            titleFilter != null -> {
+                reportRepository.findByTitleContainingIgnoreCaseAndDoctorIdOrderByDateDesc(titleFilter, effectiveDoctorId, pageable)
+            }
+            // Single filter + doctorId
             patientId != null -> {
-                reportRepository.findByPatientIdOrderByDateDesc(patientId, pageable)
+                reportRepository.findByPatientIdAndDoctorIdOrderByDateDesc(patientId, effectiveDoctorId, pageable)
             }
             specialtyId != null -> {
-                reportRepository.findBySpecialtyIdOrderByDateDesc(specialtyId, pageable)
+                reportRepository.findBySpecialtyIdAndDoctorIdOrderByDateDesc(specialtyId, effectiveDoctorId, pageable)
             }
-            else -> reportRepository.findByDoctorIdOrderByDateDesc(doctor.id, pageable)
+            // Only doctorId
+            else -> {
+                reportRepository.findByDoctorIdOrderByDateDesc(effectiveDoctorId, pageable)
+            }
         }
     }
 

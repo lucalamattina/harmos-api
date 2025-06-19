@@ -146,6 +146,8 @@ class ReportController(
     fun getReports(
         @RequestParam(required = false) patientId: Long?,
         @RequestParam(required = false) specialtyId: Long?,
+        @RequestParam(required = false) doctorId: Long?,
+        @RequestParam(required = false) title: String?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(defaultValue = "date") sortBy: String,
@@ -166,6 +168,14 @@ class ReportController(
             return ResponseEntity(mapOf("error" to "ID de la especialidad inválido"), HttpStatus.BAD_REQUEST)
         }
 
+        if (doctorId != null && doctorId <= 0) {
+            return ResponseEntity(mapOf("error" to "ID del doctor inválido"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (!title.isNullOrBlank() && title.length > 255) {
+            return ResponseEntity(mapOf("error" to "El filtro de título no puede exceder 255 caracteres"), HttpStatus.BAD_REQUEST)
+        }
+
         if (page < 0) {
             return ResponseEntity(mapOf("error" to "El número de página debe ser mayor o igual a 0"), HttpStatus.BAD_REQUEST)
         }
@@ -176,22 +186,34 @@ class ReportController(
 
         return try {
             val pageable = PageRequest.of(page, size)
-            val reportsPage = reportService.getReportsForDoctorPaginated(appUser, patientId, specialtyId, pageable)
+            val reportsPage = reportService.getReportsForDoctorPaginated(appUser, patientId, specialtyId, doctorId, title, pageable)
             
             if (reportsPage.isEmpty) {
-                val message = when {
-                    patientId != null && specialtyId != null -> "No se encontraron reportes para el paciente y especialidad especificados"
-                    patientId != null -> "No se encontraron reportes para el paciente especificado"
-                    specialtyId != null -> "No se encontraron reportes para la especialidad especificada"
-                    else -> "No se encontraron reportes"
+                val filters = mutableListOf<String>()
+                patientId?.let { filters.add("paciente") }
+                specialtyId?.let { filters.add("especialidad") }
+                doctorId?.let { filters.add("doctor") }
+                if (!title.isNullOrBlank()) filters.add("título")
+                
+                val message = if (filters.isNotEmpty()) {
+                    "No se encontraron reportes para los filtros especificados: ${filters.joinToString(", ")}"
+                } else {
+                    "No se encontraron reportes"
                 }
+                
                 return ResponseEntity(mapOf(
                     "message" to message, 
                     "reports" to emptyList<Any>(),
                     "totalElements" to 0,
                     "totalPages" to 0,
                     "currentPage" to page,
-                    "pageSize" to size
+                    "pageSize" to size,
+                    "appliedFilters" to mapOf(
+                        "patientId" to patientId,
+                        "specialtyId" to specialtyId,
+                        "doctorId" to doctorId,
+                        "title" to title
+                    )
                 ), HttpStatus.OK)
             }
             
@@ -203,7 +225,13 @@ class ReportController(
                 "currentPage" to reportsPage.number,
                 "pageSize" to reportsPage.size,
                 "hasNext" to reportsPage.hasNext(),
-                "hasPrevious" to reportsPage.hasPrevious()
+                "hasPrevious" to reportsPage.hasPrevious(),
+                "appliedFilters" to mapOf(
+                    "patientId" to patientId,
+                    "specialtyId" to specialtyId,
+                    "doctorId" to doctorId,
+                    "title" to title
+                )
             ))
         } catch (e: IllegalArgumentException) {
             ResponseEntity(mapOf("error" to "Parámetros inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
@@ -422,6 +450,10 @@ class ReportController(
     @GetMapping("/all")
     @ResponseBody
     fun getAllReportsForAdmin(
+        @RequestParam(required = false) patientId: Long?,
+        @RequestParam(required = false) specialtyId: Long?,
+        @RequestParam(required = false) doctorId: Long?,
+        @RequestParam(required = false) title: String?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(defaultValue = "date") sortBy: String,
@@ -439,6 +471,22 @@ class ReportController(
         }
 
         // Parameter validation
+        if (patientId != null && patientId <= 0) {
+            return ResponseEntity(mapOf("error" to "ID del paciente inválido"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (specialtyId != null && specialtyId <= 0) {
+            return ResponseEntity(mapOf("error" to "ID de la especialidad inválido"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (doctorId != null && doctorId <= 0) {
+            return ResponseEntity(mapOf("error" to "ID del doctor inválido"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (!title.isNullOrBlank() && title.length > 255) {
+            return ResponseEntity(mapOf("error" to "El filtro de título no puede exceder 255 caracteres"), HttpStatus.BAD_REQUEST)
+        }
+
         if (page < 0) {
             return ResponseEntity(mapOf("error" to "El número de página debe ser mayor o igual a 0"), HttpStatus.BAD_REQUEST)
         }
@@ -449,16 +497,34 @@ class ReportController(
 
         return try {
             val pageable = PageRequest.of(page, size)
-            val reportsPage = reportService.getAllReportsPaginated(pageable)
+            val reportsPage = reportService.getAllReportsPaginated(patientId, specialtyId, doctorId, title, pageable)
             
             if (reportsPage.isEmpty) {
+                val filters = mutableListOf<String>()
+                patientId?.let { filters.add("paciente") }
+                specialtyId?.let { filters.add("especialidad") }
+                doctorId?.let { filters.add("doctor") }
+                if (!title.isNullOrBlank()) filters.add("título")
+                
+                val message = if (filters.isNotEmpty()) {
+                    "No se encontraron reportes en el sistema para los filtros especificados: ${filters.joinToString(", ")}"
+                } else {
+                    "No se encontraron reportes en el sistema"
+                }
+                
                 return ResponseEntity(mapOf(
-                    "message" to "No se encontraron reportes en el sistema", 
+                    "message" to message, 
                     "reports" to emptyList<Any>(),
                     "totalElements" to 0,
                     "totalPages" to 0,
                     "currentPage" to page,
-                    "pageSize" to size
+                    "pageSize" to size,
+                    "appliedFilters" to mapOf(
+                        "patientId" to patientId,
+                        "specialtyId" to specialtyId,
+                        "doctorId" to doctorId,
+                        "title" to title
+                    )
                 ), HttpStatus.OK)
             }
             
@@ -470,7 +536,13 @@ class ReportController(
                 "currentPage" to reportsPage.number,
                 "pageSize" to reportsPage.size,
                 "hasNext" to reportsPage.hasNext(),
-                "hasPrevious" to reportsPage.hasPrevious()
+                "hasPrevious" to reportsPage.hasPrevious(),
+                "appliedFilters" to mapOf(
+                    "patientId" to patientId,
+                    "specialtyId" to specialtyId,
+                    "doctorId" to doctorId,
+                    "title" to title
+                )
             ))
         } catch (e: IllegalArgumentException) {
             ResponseEntity(mapOf("error" to "Parámetros inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
