@@ -57,6 +57,8 @@ class SecurityConfiguration(
             .authorizeRequests()
             .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Permitir OPTIONS para CORS
             .antMatchers(AUTHENTICATE_URL).permitAll() // Permitir cualquier método en /authenticate
+            // Permitir POST en /reports para cualquier usuario autenticado
+            .antMatchers(HttpMethod.POST, "/reports").authenticated()
             // Solo los POST requieren rol de administrador
             .antMatchers(HttpMethod.POST, "/users").hasAuthority("ADMINISTRATOR")
             .antMatchers(HttpMethod.POST, "/specialties").hasAuthority("ADMINISTRATOR")
