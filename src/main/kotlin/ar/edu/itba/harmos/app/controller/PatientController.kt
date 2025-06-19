@@ -157,6 +157,5 @@ class PatientController(
         }
     }
 
-    //TODO: GET FILES PACIENTE
 
 }

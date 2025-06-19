@@ -4,9 +4,13 @@ import ar.edu.itba.harmos.dtos.requests.CreateReportRequest
 import ar.edu.itba.harmos.dtos.requests.EditReportRequest
 import ar.edu.itba.harmos.dtos.responses.ReportResponse
 import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.models.AppUserRole
 import ar.edu.itba.harmos.security.annotations.CurrentUser
 import ar.edu.itba.harmos.services.CloudinaryService
 import ar.edu.itba.harmos.services.ReportService
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -20,6 +24,15 @@ class ReportController(
     private val reportService: ReportService,
     private val cloudinaryService: CloudinaryService
 ) {
+
+    // ========================= HELPER FUNCTIONS =========================
+
+    /**
+     * Check if the user has administrator role
+     */
+    private fun isAdmin(user: AppUser): Boolean {
+        return user.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+    }
 
     // ========================= CRUD OPERATIONS =========================
 
@@ -59,7 +72,8 @@ class ReportController(
             return ResponseEntity(mapOf("error" to "El archivo es obligatorio para crear un reporte"), HttpStatus.BAD_REQUEST)
         }
 
-        if (file.originalFilename.isNullOrBlank()) {
+        val originalFilename = file.originalFilename
+        if (originalFilename.isNullOrBlank()) {
             return ResponseEntity(mapOf("error" to "El archivo debe tener un nombre válido"), HttpStatus.BAD_REQUEST)
         }
 
@@ -93,7 +107,7 @@ class ReportController(
         }
 
         // File extension validation
-        val filename = file.originalFilename!!.lowercase()
+        val filename = originalFilename.lowercase()
         val allowedExtensions = listOf(".pdf", ".doc", ".docx", ".txt", ".jpg", ".jpeg", ".png")
         if (!allowedExtensions.any { filename.endsWith(it) }) {
             return ResponseEntity(
@@ -132,6 +146,10 @@ class ReportController(
     fun getReports(
         @RequestParam(required = false) patientId: Long?,
         @RequestParam(required = false) specialtyId: Long?,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int,
+        @RequestParam(defaultValue = "date") sortBy: String,
+        @RequestParam(defaultValue = "desc") sortDirection: String,
         @CurrentUser appUser: AppUser?
     ): ResponseEntity<Any> {
         // Authentication check
@@ -148,21 +166,45 @@ class ReportController(
             return ResponseEntity(mapOf("error" to "ID de la especialidad inválido"), HttpStatus.BAD_REQUEST)
         }
 
+        if (page < 0) {
+            return ResponseEntity(mapOf("error" to "El número de página debe ser mayor o igual a 0"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (size <= 0 || size > 100) {
+            return ResponseEntity(mapOf("error" to "El tamaño de página debe estar entre 1 y 100"), HttpStatus.BAD_REQUEST)
+        }
+
         return try {
-            val reports = reportService.getReportsForDoctor(appUser, patientId, specialtyId)
+            val pageable = PageRequest.of(page, size)
+            val reportsPage = reportService.getReportsForDoctorPaginated(appUser, patientId, specialtyId, pageable)
             
-            if (reports.isEmpty()) {
+            if (reportsPage.isEmpty) {
                 val message = when {
                     patientId != null && specialtyId != null -> "No se encontraron reportes para el paciente y especialidad especificados"
                     patientId != null -> "No se encontraron reportes para el paciente especificado"
                     specialtyId != null -> "No se encontraron reportes para la especialidad especificada"
                     else -> "No se encontraron reportes"
                 }
-                return ResponseEntity(mapOf("message" to message, "reports" to emptyList<Any>()), HttpStatus.OK)
+                return ResponseEntity(mapOf(
+                    "message" to message, 
+                    "reports" to emptyList<Any>(),
+                    "totalElements" to 0,
+                    "totalPages" to 0,
+                    "currentPage" to page,
+                    "pageSize" to size
+                ), HttpStatus.OK)
             }
             
-            val response = ReportResponse.listFromModel(reports, cloudinaryService)
-            ResponseEntity.ok(mapOf("reports" to response, "count" to reports.size))
+            val response = ReportResponse.listFromModel(reportsPage.content, cloudinaryService)
+            ResponseEntity.ok(mapOf(
+                "reports" to response, 
+                "totalElements" to reportsPage.totalElements,
+                "totalPages" to reportsPage.totalPages,
+                "currentPage" to reportsPage.number,
+                "pageSize" to reportsPage.size,
+                "hasNext" to reportsPage.hasNext(),
+                "hasPrevious" to reportsPage.hasPrevious()
+            ))
         } catch (e: IllegalArgumentException) {
             ResponseEntity(mapOf("error" to "Parámetros inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
         } catch (e: Exception) {
@@ -195,7 +237,7 @@ class ReportController(
                 ?: return ResponseEntity(mapOf("error" to "Reporte no encontrado"), HttpStatus.NOT_FOUND)
 
             // Verificar que el usuario tiene acceso al reporte
-            if (report.doctor.id != appUser.id && !report.patient.doctors.contains(appUser)) {
+            if (!isAdmin(appUser) && report.doctor.id != appUser.id && !report.patient.doctors.contains(appUser)) {
                 return ResponseEntity(mapOf("error" to "No tienes acceso a este reporte"), HttpStatus.FORBIDDEN)
             }
 
@@ -230,10 +272,11 @@ class ReportController(
 
         // Input validation
         if (editReportRequest.title != null) {
-            if (editReportRequest.title!!.isBlank()) {
+            val title = editReportRequest.title
+            if (title.isBlank()) {
                 return ResponseEntity(mapOf("error" to "El título no puede estar vacío"), HttpStatus.BAD_REQUEST)
             }
-            if (editReportRequest.title!!.length > 255) {
+            if (title.length > 255) {
                 return ResponseEntity(mapOf("error" to "El título no puede exceder 255 caracteres"), HttpStatus.BAD_REQUEST)
             }
         }
@@ -246,8 +289,8 @@ class ReportController(
             }
 
             // Verificar que el usuario tiene permisos para actualizar el reporte
-            if (existingReport.doctor.id != appUser.id) {
-                return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte puede editarlo"), HttpStatus.FORBIDDEN)
+            if (!isAdmin(appUser) && existingReport.doctor.id != appUser.id) {
+                return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte o un administrador puede editarlo"), HttpStatus.FORBIDDEN)
             }
 
             val updatedReport = reportService.updateReport(id, editReportRequest, appUser)
@@ -290,8 +333,8 @@ class ReportController(
             }
 
             // Verificar que el usuario tiene permisos para eliminar el reporte
-            if (existingReport.doctor.id != appUser.id) {
-                return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte puede eliminarlo"), HttpStatus.FORBIDDEN)
+            if (!isAdmin(appUser) && existingReport.doctor.id != appUser.id) {
+                return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte o un administrador puede eliminarlo"), HttpStatus.FORBIDDEN)
             }
 
             val deleted = reportService.deleteReport(id, appUser)
@@ -335,7 +378,7 @@ class ReportController(
                 ?: return ResponseEntity(mapOf("error" to "Reporte no encontrado"), HttpStatus.NOT_FOUND)
 
             // Verificar que el usuario tiene acceso al reporte
-            if (report.doctor.id != appUser.id && !report.patient.doctors.contains(appUser)) {
+            if (!isAdmin(appUser) && report.doctor.id != appUser.id && !report.patient.doctors.contains(appUser)) {
                 return ResponseEntity(mapOf("error" to "No tienes acceso a este reporte"), HttpStatus.FORBIDDEN)
             }
 
@@ -371,6 +414,70 @@ class ReportController(
             e.printStackTrace()
             ResponseEntity(
                 mapOf("error" to "Error al obtener el archivo del reporte. Inténtelo de nuevo más tarde"),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
+    }
+
+    @GetMapping("/all")
+    @ResponseBody
+    fun getAllReportsForAdmin(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int,
+        @RequestParam(defaultValue = "date") sortBy: String,
+        @RequestParam(defaultValue = "desc") sortDirection: String,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        // Authentication check
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+
+        // Admin authorization check
+        if (!isAdmin(appUser)) {
+            return ResponseEntity(mapOf("error" to "Solo los administradores pueden acceder a todos los reportes"), HttpStatus.FORBIDDEN)
+        }
+
+        // Parameter validation
+        if (page < 0) {
+            return ResponseEntity(mapOf("error" to "El número de página debe ser mayor o igual a 0"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (size <= 0 || size > 100) {
+            return ResponseEntity(mapOf("error" to "El tamaño de página debe estar entre 1 y 100"), HttpStatus.BAD_REQUEST)
+        }
+
+        return try {
+            val pageable = PageRequest.of(page, size)
+            val reportsPage = reportService.getAllReportsPaginated(pageable)
+            
+            if (reportsPage.isEmpty) {
+                return ResponseEntity(mapOf(
+                    "message" to "No se encontraron reportes en el sistema", 
+                    "reports" to emptyList<Any>(),
+                    "totalElements" to 0,
+                    "totalPages" to 0,
+                    "currentPage" to page,
+                    "pageSize" to size
+                ), HttpStatus.OK)
+            }
+            
+            val response = ReportResponse.listFromModel(reportsPage.content, cloudinaryService)
+            ResponseEntity.ok(mapOf(
+                "reports" to response, 
+                "totalElements" to reportsPage.totalElements,
+                "totalPages" to reportsPage.totalPages,
+                "currentPage" to reportsPage.number,
+                "pageSize" to reportsPage.size,
+                "hasNext" to reportsPage.hasNext(),
+                "hasPrevious" to reportsPage.hasPrevious()
+            ))
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity(mapOf("error" to "Parámetros inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ResponseEntity(
+                mapOf("error" to "Error al obtener reportes. Inténtelo de nuevo más tarde"),
                 HttpStatus.INTERNAL_SERVER_ERROR
             )
         }
