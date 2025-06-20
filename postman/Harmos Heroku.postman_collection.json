@@ -17,6 +17,11 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -187,6 +192,11 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -355,11 +365,16 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"location\": \"Consultorio 1\",\n    \"dayOfWeek\": \"MONDAY\",\n    \"hourFrom\": 9,\n    \"minuteFrom\": 0,\n    \"hourTo\": 17,\n    \"minuteTo\": 0,\n    \"doctorUserId\": 1\n}"
+							"raw": "{\n    \"locationId\": 1,\n    \"dayOfWeek\": \"MONDAY\",\n    \"hourFrom\": 9,\n    \"minuteFrom\": 0,\n    \"hourTo\": 10,\n    \"minuteTo\": 0,\n    \"doctorUserId\": 1,\n    \"patientId\": 1\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/schedules",
@@ -372,11 +387,41 @@
 					"name": "Get All Schedules",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
 						"url": {
-							"raw": "{{base_url}}/schedules",
-							"host": ["{{base_url}}"],
-							"path": ["schedules"]
+							"raw": "{{base_url}}/schedules?locationId=1&doctorId=1&patientId=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"schedules"
+							],
+							"query": [
+								{
+									"key": "locationId",
+									"value": "1",
+									"description": "(Optional) Filter by location ID",
+									"disabled": true
+								},
+								{
+									"key": "doctorId",
+									"value": "1",
+									"description": "(Optional) Filter by doctor ID",
+									"disabled": true
+								},
+								{
+									"key": "patientId",
+									"value": "1",
+									"description": "(Optional) Filter by patient ID",
+									"disabled": true
+								}
+							]
 						}
 					}
 				}
