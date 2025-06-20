@@ -22,6 +22,8 @@ class DataInitializer(
         private val locationRepository: LocationRepository,
         private val announcementRepository: AnnouncementRepository,
         private val notificationRepository: NotificationRepository,
+        private val passwordResetTokenRepository: PasswordResetTokenRepository,
+        private val reportRepository: ReportRepository,
         private val passwordEncoder: PasswordEncoder,
         @Value("\${app.database.repopulate:false}") private val repopulateDatabase: Boolean
 ) {
@@ -45,14 +47,17 @@ class DataInitializer(
     }
 
     private fun clearDatabase() {
-        notificationRepository.deleteAll()
-        announcementRepository.deleteAll()
-        scheduleRepository.deleteAll()
-        locationRepository.deleteAll()
-        patientRepository.deleteAll()
-        appUserRepository.deleteAll()
-        specialtyRepository.deleteAll()
-        roleRepository.deleteAll()
+        // Delete in an order that respects foreign key constraints
+        passwordResetTokenRepository.deleteAll() // Depends on AppUser
+        reportRepository.deleteAll()             // Depends on Patient, AppUser, Specialty
+        notificationRepository.deleteAll()       // Depends on AppUser, Announcement
+        scheduleRepository.deleteAll()         // Depends on Location, AppUser, Patient
+        announcementRepository.deleteAll()     // Depends on AppUser; M2M Specialty
+        patientRepository.deleteAll()          // M2M AppUser
+        appUserRepository.deleteAll()          // M2M Specialty, M2M Role
+        locationRepository.deleteAll()         // Base entity
+        specialtyRepository.deleteAll()        // Base entity
+        roleRepository.deleteAll()             // Base entity
     }
 
     private fun initializeRoles() {
