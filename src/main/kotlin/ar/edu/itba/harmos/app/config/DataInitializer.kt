@@ -65,17 +65,17 @@ class DataInitializer(
     }
 
     private val firstNames = listOf(
-        "Sofía", "Mateo", "Valentina", "Santiago", "Isabella", "Benjamín", "Camila", "Thiago",
-        "Emma", "Lucas", "Martina", "Joaquín", "Mía", "Bautista", "Olivia", "Agustín",
-        "Catalina", "Facundo", "Elena", "Tomás", "Abril", "Ignacio", "Julieta", "Nicolás",
+        "Sofia", "Mateo", "Valentina", "Santiago", "Isabella", "Benjamin", "Camila", "Thiago",
+        "Emma", "Lucas", "Martina", "Joaquin", "Mia", "Bautista", "Olivia", "Agustin",
+        "Catalina", "Facundo", "Elena", "Tomas", "Abril", "Ignacio", "Julieta", "Nicolas",
         "Renata", "Lautaro", "Zoe", "Francisco", "Alma", "Juan"
     )
 
     private val lastNames = listOf(
-        "González", "Rodríguez", "Gómez", "Fernández", "López", "Díaz", "Martínez", "Pérez",
-        "García", "Sánchez", "Romero", "Sosa", "Torres", "Álvarez", "Ruiz", "Ramírez",
-        "Flores", "Benítez", "Acosta", "Medina", "Herrera", "Suárez", "Aguirre", "Giménez",
-        "Molina", "Castro", "Ortiz", "Silva", "Núñez", "Luna"
+        "Gonzalez", "Rodriguez", "Gomez", "Fernandez", "Lopez", "Diaz", "Martinez", "Perez",
+        "Garcia", "Sanchez", "Romero", "Sosa", "Torres", "Alvarez", "Ruiz", "Ramirez",
+        "Flores", "Benitez", "Acosta", "Medina", "Herrera", "Suarez", "Aguirre", "Gimenez",
+        "Molina", "Castro", "Ortiz", "Silva", "Nuñez", "Luna"
     )
 
     private fun getRandomFirstName(): String {
