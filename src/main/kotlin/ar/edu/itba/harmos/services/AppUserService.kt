@@ -34,16 +34,16 @@ class AppUserService(
         if (appUserRepository.findByEmail(createAppUserRequest.email) != null) {
             return null //TODO: dar feedback que el user existe
         }
-        val specialties: MutableSet<Specialty> = if (createAppUserRequest.specialties.isNullOrEmpty()) {
-            specialtyService.getAllSpecialties().toMutableSet()
+        val resolvedSpecialties: MutableSet<Specialty> = if (createAppUserRequest.specialties.isNullOrEmpty()) {
+            mutableSetOf()
         } else {
-            createAppUserRequest.specialties.mapNotNull { specialtyName ->
-                specialtyService.getSpecialtyByName(specialtyName)
-            }.toMutableSet()
-        }
-
-        if (specialties.isEmpty()) {
-            throw IllegalArgumentException("At least one valid specialty must be provided")
+            try {
+                createAppUserRequest.specialties!!.map { specialtyName ->
+                    specialtyService.getSpecialtyByName(specialtyName)!!
+                }.toMutableSet()
+            } catch (e: IllegalArgumentException) {
+                return null
+            }
         }
 
         val rolesList = createAppUserRequest.roles ?: emptyList()
@@ -63,7 +63,7 @@ class AppUserService(
             createAppUserRequest.firstName,
             createAppUserRequest.lastName,
             createAppUserRequest.phone,
-            specialties,
+            resolvedSpecialties,
             roles
         )
         return appUserRepository.save(applicationUser)

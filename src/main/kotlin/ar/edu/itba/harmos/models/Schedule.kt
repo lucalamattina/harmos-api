@@ -6,19 +6,23 @@ import javax.persistence.*
 @Entity
 @Table(name = "schedule")
 class Schedule(
-    val location: String,
-    val dayOfWeek: DayOfWeek,
-    val hourFrom: Int,
-    val minuteFrom: Int,
-    val hourTo: Int,
-    val minuteTo: Int,
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    val doctor: AppUser,
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = -1
+        @ManyToOne(fetch = FetchType.EAGER, optional = false)
+        @JoinColumn(name = "location_id", nullable = false)
+        val location: Location,
+        val dayOfWeek: DayOfWeek,
+        val hourFrom: Int,
+        val minuteFrom: Int,
+        val hourTo: Int,
+        val minuteTo: Int,
+        @ManyToOne(fetch = FetchType.EAGER, optional = false)
+        @JoinColumn(name = "doctor_user_id", nullable = false)
+        val doctor: AppUser,
+        @ManyToOne(fetch = FetchType.EAGER, optional = false)
+        @JoinColumn(name = "patient_id", nullable = false)
+        val patient: Patient,
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long = -1
 ) {
-    constructor() : this("", DayOfWeek.MONDAY, 0, 0, 0, 0,  AppUser())
+    protected constructor() : this(Location(), DayOfWeek.MONDAY, 0, 0, 0, 0, AppUser(), Patient())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
