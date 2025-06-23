@@ -36,7 +36,7 @@ class DataInitializer(
                 clearDatabase()
                 initializeRoles()
                 initializeSpecialties()
-                initializeUsers() // Initialize users before patients and schedules
+                initializeUsers()
                 initializeLocations()
                 initializePatients()
                 initializeSchedules()
@@ -47,17 +47,16 @@ class DataInitializer(
     }
 
     private fun clearDatabase() {
-        // Delete in an order that respects foreign key constraints
-        passwordResetTokenRepository.deleteAll() // Depends on AppUser
-        reportRepository.deleteAll()             // Depends on Patient, AppUser, Specialty
-        notificationRepository.deleteAll()       // Depends on AppUser, Announcement
-        scheduleRepository.deleteAll()         // Depends on Location, AppUser, Patient
-        announcementRepository.deleteAll()     // Depends on AppUser; M2M Specialty
-        patientRepository.deleteAll()          // M2M AppUser
-        appUserRepository.deleteAll()          // M2M Specialty, M2M Role
-        locationRepository.deleteAll()         // Base entity
-        specialtyRepository.deleteAll()        // Base entity
-        roleRepository.deleteAll()             // Base entity
+        passwordResetTokenRepository.deleteAll()
+        reportRepository.deleteAll()
+        notificationRepository.deleteAll()
+        scheduleRepository.deleteAll()
+        announcementRepository.deleteAll()
+        patientRepository.deleteAll()
+        appUserRepository.deleteAll()
+        locationRepository.deleteAll()
+        specialtyRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     private fun initializeRoles() {
@@ -69,19 +68,73 @@ class DataInitializer(
         roleRepository.saveAll(roles)
     }
 
-    private val firstNames = listOf(
-        "Sofia", "Mateo", "Valentina", "Santiago", "Isabella", "Benjamin", "Camila", "Thiago",
-        "Emma", "Lucas", "Martina", "Joaquin", "Mia", "Bautista", "Olivia", "Agustin",
-        "Catalina", "Facundo", "Elena", "Tomas", "Abril", "Ignacio", "Julieta", "Nicolas",
-        "Renata", "Lautaro", "Zoe", "Francisco", "Alma", "Juan"
-    )
+    private val firstNames =
+            listOf(
+                    "Sofia",
+                    "Mateo",
+                    "Valentina",
+                    "Santiago",
+                    "Isabella",
+                    "Benjamin",
+                    "Camila",
+                    "Thiago",
+                    "Emma",
+                    "Lucas",
+                    "Martina",
+                    "Joaquin",
+                    "Mia",
+                    "Bautista",
+                    "Olivia",
+                    "Agustin",
+                    "Catalina",
+                    "Facundo",
+                    "Elena",
+                    "Tomas",
+                    "Abril",
+                    "Ignacio",
+                    "Julieta",
+                    "Nicolas",
+                    "Renata",
+                    "Lautaro",
+                    "Zoe",
+                    "Francisco",
+                    "Alma",
+                    "Juan"
+            )
 
-    private val lastNames = listOf(
-        "Gonzalez", "Rodriguez", "Gomez", "Fernandez", "Lopez", "Diaz", "Martinez", "Perez",
-        "Garcia", "Sanchez", "Romero", "Sosa", "Torres", "Alvarez", "Ruiz", "Ramirez",
-        "Flores", "Benitez", "Acosta", "Medina", "Herrera", "Suarez", "Aguirre", "Gimenez",
-        "Molina", "Castro", "Ortiz", "Silva", "Nuñez", "Luna"
-    )
+    private val lastNames =
+            listOf(
+                    "Gonzalez",
+                    "Rodriguez",
+                    "Gomez",
+                    "Fernandez",
+                    "Lopez",
+                    "Diaz",
+                    "Martinez",
+                    "Perez",
+                    "Garcia",
+                    "Sanchez",
+                    "Romero",
+                    "Sosa",
+                    "Torres",
+                    "Alvarez",
+                    "Ruiz",
+                    "Ramirez",
+                    "Flores",
+                    "Benitez",
+                    "Acosta",
+                    "Medina",
+                    "Herrera",
+                    "Suarez",
+                    "Aguirre",
+                    "Gimenez",
+                    "Molina",
+                    "Castro",
+                    "Ortiz",
+                    "Silva",
+                    "Nuñez",
+                    "Luna"
+            )
 
     private fun getRandomFirstName(): String {
         return firstNames.random()
@@ -90,7 +143,6 @@ class DataInitializer(
     private fun getRandomLastName(): String {
         return lastNames.random()
     }
-
 
     private fun initializeSpecialties() {
         val specialties =
@@ -109,11 +161,11 @@ class DataInitializer(
         val adminRole = roleRepository.findByRole(AppUserRole.ADMINISTRATOR.roleName)!!
         val allSpecialties = specialtyRepository.findAll().toMutableSet()
 
-        // Create 30 doctors
         val doctors =
                 (1..30).map { i ->
                     AppUser(
-                            email = "${getRandomFirstName().lowercase()}.${getRandomLastName().lowercase()}$i@example.com",
+                            email =
+                                    "${getRandomFirstName().lowercase()}.${getRandomLastName().lowercase()}$i@example.com",
                             password = passwordEncoder.encode("password"),
                             firstName = getRandomFirstName(),
                             lastName = getRandomLastName(),
@@ -128,7 +180,28 @@ class DataInitializer(
                     )
                 }
 
-        // Create admin user
+        val users =
+                setOf(
+                        AppUser(
+                                email = "alejandro.rolandelli@gmail.com",
+                                password = passwordEncoder.encode("password"),
+                                firstName = "Alejandro",
+                                lastName = "Rolandelli",
+                                phone = "3453453456",
+                                specialties = mutableSetOf(),
+                                roles = mutableSetOf(doctorRole, adminRole)
+                        ),
+                        AppUser(
+                                email = "dorado.tomas@gmail.com",
+                                password = passwordEncoder.encode("password"),
+                                firstName = "Tomas",
+                                lastName = "Dorado",
+                                phone = "3453453456",
+                                specialties = mutableSetOf(),
+                                roles = mutableSetOf(doctorRole, adminRole)
+                        )
+                )
+
         val admin =
                 AppUser(
                         email = "noreplyharmos@gmail.com",
@@ -140,7 +213,7 @@ class DataInitializer(
                         roles = mutableSetOf(adminRole)
                 )
 
-        appUserRepository.saveAll(doctors + admin)
+        appUserRepository.saveAll(doctors + users + admin)
     }
 
     private fun initializeLocations() {
@@ -157,7 +230,7 @@ class DataInitializer(
 
     private fun initializePatients() {
         val patients =
-                (1..50).map { i ->
+                (1..50).map { _ ->
                     Patient(
                             name = "${getRandomFirstName()} ${getRandomLastName()}",
                             phone = "1234567890",
@@ -168,7 +241,6 @@ class DataInitializer(
                 }
         patientRepository.saveAll(patients)
 
-        // Assign doctors to patients
         val allDoctors = appUserRepository.findAll()
         val allPatients = patientRepository.findAll()
 
@@ -191,7 +263,7 @@ class DataInitializer(
         }
 
         val schedulesToCreate = mutableListOf<Schedule>()
-        val numberOfSchedules = 10 // Create 10 schedules
+        val numberOfSchedules = 20
 
         for (i in 0 until numberOfSchedules) {
             val randomDoctor = doctors.random()
@@ -248,7 +320,7 @@ class DataInitializer(
             notifications.add(
                     Notification(
                             message =
-                                    "Welcome to Harmos! Your account has been created successfully.",
+                                    "Bienvenido a  Harmos! Tu cuenta ha sido creada exitosamente.",
                             read = Random.nextBoolean(),
                             date = LocalDateTime.now().minusDays(Random.nextLong(1, 7)),
                             user = user,
@@ -259,7 +331,7 @@ class DataInitializer(
             notifications.add(
                     Notification(
                             message =
-                                    "System maintenance scheduled for this weekend. Please save your work.",
+                                    "Mantenimiento de sistema planificado para el fin de semana.",
                             read = Random.nextBoolean(),
                             date = LocalDateTime.now().minusDays(Random.nextLong(0, 3)),
                             user = user,
@@ -274,7 +346,7 @@ class DataInitializer(
                 if (user.id != announcement.createdBy.id) {
                     notifications.add(
                             Notification(
-                                    message = "New announcement: ${announcement.title}",
+                                    message = "Nuevo anuncio: ${announcement.title}",
                                     read = Random.nextBoolean(),
                                     date = announcement.date.plusMinutes(Random.nextLong(1, 30)),
                                     user = user,
