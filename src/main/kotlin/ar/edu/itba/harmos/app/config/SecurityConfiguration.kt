@@ -60,8 +60,8 @@ class SecurityConfiguration(
             .antMatchers(AUTHENTICATE_URL).permitAll() // Permitir cualquier método en /authenticate
             // Permitir POST en /reports para cualquier usuario autenticado
             .antMatchers(HttpMethod.POST, "/reports").authenticated()
-            // Permitir solo administradores para ver todos los reportes
-            .antMatchers(HttpMethod.GET, "/reports/all").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            // Permitir a todos los usuarios autenticados ver todos los reportes
+            .antMatchers(HttpMethod.GET, "/reports/all").authenticated()
             // Solo los POST requieren rol de administrador
             .antMatchers(HttpMethod.POST, "/users").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.POST, "/specialties").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
@@ -70,6 +70,8 @@ class SecurityConfiguration(
             .antMatchers(HttpMethod.PUT, "/locations/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.POST, "/schedules").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.DELETE, "/schedules/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            // Restringir la asignación de doctores a pacientes solo a administradores
+            .antMatchers(HttpMethod.POST, "/patients/*/doctors/*").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .anyRequest().authenticated()
             .and()
             .addFilter(AuthenticationFilter(authenticationManager(), appUserService))

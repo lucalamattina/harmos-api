@@ -465,11 +465,6 @@ class ReportController(
             return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
         }
 
-        // Admin authorization check
-        if (!isAdmin(appUser)) {
-            return ResponseEntity(mapOf("error" to "Solo los administradores pueden acceder a todos los reportes"), HttpStatus.FORBIDDEN)
-        }
-
         // Parameter validation
         if (patientId != null && patientId <= 0) {
             return ResponseEntity(mapOf("error" to "ID del paciente inválido"), HttpStatus.BAD_REQUEST)
