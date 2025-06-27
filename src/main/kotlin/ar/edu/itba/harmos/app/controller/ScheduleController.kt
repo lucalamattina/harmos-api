@@ -67,4 +67,13 @@ class ScheduleController(
                         scheduleService.findFilteredSchedules(locationId, doctorId, patientId)
                 return ResponseEntity(ScheduleResponse.setFromModel(schedules), HttpStatus.OK)
         }
+
+        @DeleteMapping("/{id}")
+        fun deleteSchedule(@PathVariable id: Long): ResponseEntity<Any> {
+                return if (scheduleService.deleteScheduleById(id)) {
+                        ResponseEntity.noContent().build()
+                } else {
+                        ResponseEntity.notFound().build()
+                }
+        }
 }

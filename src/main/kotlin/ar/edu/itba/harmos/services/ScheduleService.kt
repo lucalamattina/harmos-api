@@ -64,4 +64,14 @@ class ScheduleService(private val scheduleRepository: ScheduleRepository) {
         }
         return scheduleRepository.findAll(spec).toSet()
     }
+
+    fun deleteScheduleById(id: Long): Boolean {
+        val schedule = scheduleRepository.findById(id)
+        return if (schedule.isPresent) {
+            scheduleRepository.delete(schedule.get())
+            true
+        } else {
+            false
+        }
+    }
 }
