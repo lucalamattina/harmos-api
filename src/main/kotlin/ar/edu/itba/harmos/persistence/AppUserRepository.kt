@@ -2,15 +2,16 @@ package ar.edu.itba.harmos.persistence
 
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.Specialty
-import org.springframework.stereotype.Repository
-import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.data.repository.query.Param
+import org.springframework.stereotype.Repository
 
 @Repository
-interface AppUserRepository : PagingAndSortingRepository<AppUser, Long> {
+interface AppUserRepository : PagingAndSortingRepository<AppUser, Long>, JpaSpecificationExecutor<AppUser> {
 
     @Query("""
         SELECT u FROM AppUser u 

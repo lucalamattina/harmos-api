@@ -16,8 +16,10 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
 import java.util.UUID
+import javax.persistence.criteria.Predicate
 
 @Service
 class AppUserService(
@@ -81,25 +83,8 @@ class AppUserService(
         return null
     }
 
-
     fun findUsersBySpecialties(specialties: List<Specialty>, page: Int, size: Int): List<AppUser> {
         return appUserRepository.findBySpecialtiesIn(specialties, PageRequest.of(page, size))
-    }
-
-    fun findAllUsers(page: Int, size: Int): List<AppUser> {
-        return appUserRepository.findAll(PageRequest.of(page, size)).content
-    }
-
-    fun findUserBySpecialtyAndIdOrEmail(specialties: List<String>, id: Long?, email: String?): List<AppUser> {
-        return appUserRepository.findBySpecialtiesInAndIdOrEmail(specialties, id, email)
-    }
-
-    fun findUserByIdOrEmail(id: Long?, email: String?): List<AppUser> {
-        return when {
-            id != null -> appUserRepository.findById(id).map { listOf(it) }.orElse(emptyList())
-            email != null -> appUserRepository.findByEmail(email)?.let { listOf(it) } ?: emptyList()  //TODO:QUE DEVUELVA CHEQUENADO que sean iguales
-            else -> emptyList()
-        }
     }
 
     fun findAppUsersByEmailAndSpecialties(
@@ -110,7 +95,36 @@ class AppUserService(
         size: Int
     ): Page<AppUser> {
         val pageable = PageRequest.of(page, size)
-        return appUserRepository.findAppUsersByEmailAndSpecialties(email, name, specialties, pageable)
+        val spec = Specification<AppUser> { root, query, criteriaBuilder ->
+            val predicates = mutableListOf<Predicate>()
+
+            email?.let {
+                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), "%${it.lowercase()}%"))
+            }
+
+            name?.let {
+                val nameParts = it.split(" ").map { part -> part.lowercase() }
+                val namePredicates = mutableListOf<Predicate>()
+                for (part in nameParts) {
+                    namePredicates.add(
+                        criteriaBuilder.or(
+                            criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), "%$part%"),
+                            criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")), "%$part%")
+                        )
+                    )
+                }
+                predicates.add(criteriaBuilder.and(*namePredicates.toTypedArray()))
+            }
+
+            specialties?.let {
+                if (it.isNotEmpty()) {
+                    predicates.add(root.get<Set<Specialty>>("specialties").`in`(it))
+                }
+            }
+
+            criteriaBuilder.and(*predicates.toTypedArray())
+        }
+        return appUserRepository.findAll(spec, pageable)
     }
 
     fun deleteUserById(id: Long): Boolean {
