@@ -64,6 +64,10 @@ class SecurityConfiguration(
             // Solo los POST requieren rol de administrador
             .antMatchers(HttpMethod.POST, "/users").hasAuthority("ADMINISTRATOR")
             .antMatchers(HttpMethod.POST, "/specialties").hasAuthority("ADMINISTRATOR")
+            .antMatchers(HttpMethod.POST, "/locations").hasAuthority("ADMINISTRATOR")
+            .antMatchers(HttpMethod.DELETE, "/locations/**").hasAuthority("ADMINISTRATOR")
+            .antMatchers(HttpMethod.POST, "/schedules").hasAuthority("ADMINISTRATOR")
+            .antMatchers(HttpMethod.DELETE, "/schedules/**").hasAuthority("ADMINISTRATOR")
             .anyRequest().authenticated()
             .and()
             .addFilter(AuthenticationFilter(authenticationManager(), appUserService))
