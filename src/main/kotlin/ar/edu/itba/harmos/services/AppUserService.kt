@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.jpa.domain.Specification
@@ -94,7 +95,7 @@ class AppUserService(
         page: Int,
         size: Int
     ): Page<AppUser> {
-        val pageable = PageRequest.of(page, size)
+        val pageable = PageRequest.of(page, size, Sort.by("lastName"))
         val spec = Specification<AppUser> { root, query, criteriaBuilder ->
             val predicates = mutableListOf<Predicate>()
 
