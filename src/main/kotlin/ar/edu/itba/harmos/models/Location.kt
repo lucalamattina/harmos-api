@@ -6,6 +6,8 @@ import javax.persistence.*
 @Table(name = "locations")
 class Location(
         @Column(nullable = false, unique = true) val name: String, // Ensure name is not nullable and unique
+        @OneToMany(mappedBy = "location", cascade = [CascadeType.REMOVE], orphanRemoval = true)
+        val schedules: MutableList<Schedule> = mutableListOf(),
         @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long = -1
 ) {
     constructor() : this("")
