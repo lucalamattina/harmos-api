@@ -5,6 +5,7 @@ import ar.edu.itba.harmos.security.AuthenticationFilter
 import ar.edu.itba.harmos.security.AuthorizationFilter
 import ar.edu.itba.harmos.services.AppUserDetailsService
 import ar.edu.itba.harmos.services.AppUserService
+import ar.edu.itba.harmos.models.AppUserRole
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -60,14 +61,15 @@ class SecurityConfiguration(
             // Permitir POST en /reports para cualquier usuario autenticado
             .antMatchers(HttpMethod.POST, "/reports").authenticated()
             // Permitir solo administradores para ver todos los reportes
-            .antMatchers(HttpMethod.GET, "/reports/all").hasAuthority("ADMINISTRATOR")
+            .antMatchers(HttpMethod.GET, "/reports/all").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             // Solo los POST requieren rol de administrador
-            .antMatchers(HttpMethod.POST, "/users").hasAuthority("ADMINISTRATOR")
-            .antMatchers(HttpMethod.POST, "/specialties").hasAuthority("ADMINISTRATOR")
-            .antMatchers(HttpMethod.POST, "/locations").hasAuthority("ADMINISTRATOR")
-            .antMatchers(HttpMethod.DELETE, "/locations/**").hasAuthority("ADMINISTRATOR")
-            .antMatchers(HttpMethod.POST, "/schedules").hasAuthority("ADMINISTRATOR")
-            .antMatchers(HttpMethod.DELETE, "/schedules/**").hasAuthority("ADMINISTRATOR")
+            .antMatchers(HttpMethod.POST, "/users").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.POST, "/specialties").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.POST, "/locations").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.DELETE, "/locations/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.PUT, "/locations/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.POST, "/schedules").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.DELETE, "/schedules/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .anyRequest().authenticated()
             .and()
             .addFilter(AuthenticationFilter(authenticationManager(), appUserService))

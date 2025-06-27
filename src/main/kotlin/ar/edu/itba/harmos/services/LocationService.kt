@@ -1,6 +1,7 @@
 package ar.edu.itba.harmos.services
 
 import ar.edu.itba.harmos.dtos.requests.CreateLocationRequest
+import ar.edu.itba.harmos.dtos.requests.EditLocationRequest
 import ar.edu.itba.harmos.models.Location
 import ar.edu.itba.harmos.persistence.LocationRepository
 import org.springframework.stereotype.Service
@@ -40,6 +41,16 @@ class LocationService(private val locationRepository: LocationRepository) {
             true
         } else {
             false
+        }
+    }
+
+    fun updateLocation(id: Long, editLocationRequest: EditLocationRequest): Location? {
+        val location = locationRepository.findById(id)
+        if (location.isPresent) {
+            val updatedLocation = Location(editLocationRequest.name, id = location.get().id)
+            return locationRepository.save(updatedLocation)
+        } else {
+            return null
         }
     }
 }

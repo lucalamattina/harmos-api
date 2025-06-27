@@ -1,6 +1,7 @@
 package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.requests.CreateLocationRequest
+import ar.edu.itba.harmos.dtos.requests.EditLocationRequest
 import ar.edu.itba.harmos.dtos.responses.LocationResponse
 import ar.edu.itba.harmos.services.LocationService
 import org.springframework.http.HttpStatus
@@ -45,5 +46,14 @@ class LocationController(private val locationService: LocationService) {
         } else {
             ResponseEntity(HttpStatus.NOT_FOUND)
         }
+    }
+
+    @PutMapping("/{id}")
+    @ResponseBody
+    fun update(@PathVariable id: Long, @RequestBody editLocationRequest: EditLocationRequest): ResponseEntity<Any> {
+        val location = locationService.updateLocation(id, editLocationRequest)
+        return if (location != null) {
+            ResponseEntity(LocationResponse.singleFromModel(location), HttpStatus.OK)
+        } else ResponseEntity(HttpStatus.NOT_FOUND)
     }
 }
