@@ -111,9 +111,20 @@ class CloudinaryService(
      */
     fun deleteFile(publicId: String, resourceType: String = "image"): Boolean {
         return try {
+            println("CloudinaryService.deleteFile - Attempting to delete:")
+            println("  publicId: $publicId")
+            println("  resourceType: $resourceType")
+            
             val result = cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType))
-            result["result"] == "ok"
+            println("  Cloudinary response: $result")
+            
+            val success = result["result"] == "ok"
+            println("  Delete success: $success")
+            
+            success
         } catch (e: Exception) {
+            println("  Delete failed with exception: ${e.message}")
+            e.printStackTrace()
             false
         }
     }
@@ -122,17 +133,115 @@ class CloudinaryService(
      * Extrae el public_id de una URL de Cloudinary
      */
     fun extractPublicId(url: String): String {
-        // Para URLs con versión: https://res.cloudinary.com/cloud/resource_type/upload/v1234567890/path/file.ext
-        val regexWithVersion = """/v\d+/(.+)$""".toRegex()
-        val matchWithVersion = regexWithVersion.find(url)
-        if (matchWithVersion != null) {
-            return matchWithVersion.groupValues[1]
+        println("CloudinaryService.extractPublicId - Processing URL: $url")
+        
+        try {
+            // Para URLs con versión: https://res.cloudinary.com/cloud/resource_type/upload/v1234567890/path/file.ext
+            val regexWithVersion = """/v\d+/(.+)$""".toRegex()
+            val matchWithVersion = regexWithVersion.find(url)
+            if (matchWithVersion != null) {
+                val publicId = matchWithVersion.groupValues[1]
+                println("  Extracted publicId (with version): $publicId")
+                return publicId
+            }
+            
+            // Para URLs sin versión: https://res.cloudinary.com/cloud/resource_type/upload/path/file.ext
+            val regexWithoutVersion = """/upload/(.+)$""".toRegex()
+            val matchWithoutVersion = regexWithoutVersion.find(url)
+            val publicId = matchWithoutVersion?.groupValues?.get(1) ?: ""
+            println("  Extracted publicId (without version): $publicId")
+            
+            if (publicId.isEmpty()) {
+                println("  WARNING: Could not extract publicId from URL")
+            }
+            
+            return publicId
+        } catch (e: Exception) {
+            println("  ERROR extracting publicId: ${e.message}")
+            e.printStackTrace()
+            return ""
+        }
+    }
+
+    /**
+     * Método mejorado para eliminar archivos que intenta múltiples enfoques
+     */
+    fun deleteFileEnhanced(url: String, resourceType: String = "raw"): Boolean {
+        println("CloudinaryService.deleteFileEnhanced - Processing URL: $url")
+        
+        val publicId = extractPublicId(url)
+        if (publicId.isEmpty()) {
+            println("  Failed: Could not extract publicId from URL")
+            return false
         }
         
-        // Para URLs sin versión: https://res.cloudinary.com/cloud/resource_type/upload/path/file.ext
-        val regexWithoutVersion = """/upload/(.+)$""".toRegex()
-        val matchWithoutVersion = regexWithoutVersion.find(url)
-        return matchWithoutVersion?.groupValues?.get(1) ?: ""
+        // Para imágenes, lo más común es que el publicId NO tenga extensión
+        if (resourceType == "image") {
+            // Intento 1: Para imágenes, intentar SIN extensión primero
+            val publicIdWithoutExt = if (publicId.contains(".")) {
+                publicId.substringBeforeLast(".")
+            } else {
+                publicId
+            }
+            println("  Attempt 1 (Image): Delete without extension: $publicIdWithoutExt")
+            if (deleteFile(publicIdWithoutExt, resourceType)) {
+                println("  Success without extension")
+                return true
+            }
+            
+            // Intento 2: Si no funcionó, intentar con la extensión original
+            if (publicId.contains(".")) {
+                println("  Attempt 2 (Image): Delete with original extension: $publicId")
+                if (deleteFile(publicId, resourceType)) {
+                    println("  Success with original extension")
+                    return true
+                }
+            }
+        } else {
+            // Para archivos RAW, intentar con el publicId completo primero
+            println("  Attempt 1 (Raw): Delete with full publicId: $publicId")
+            if (deleteFile(publicId, resourceType)) {
+                println("  Success with full publicId")
+                return true
+            }
+            
+            // Intento 2: Para archivos RAW, intentar sin extensión
+            if (publicId.contains(".")) {
+                val publicIdWithoutExt = publicId.substringBeforeLast(".")
+                println("  Attempt 2 (Raw): Delete without extension: $publicIdWithoutExt")
+                if (deleteFile(publicIdWithoutExt, resourceType)) {
+                    println("  Success without extension")
+                    return true
+                }
+            }
+        }
+        
+        // Intento 3: Intentar con el otro resource type (con ambas variantes del publicId)
+        val alternativeResourceType = if (resourceType == "image") "raw" else "image"
+        
+        // Primero sin extensión
+        val publicIdWithoutExt = if (publicId.contains(".")) {
+            publicId.substringBeforeLast(".")
+        } else {
+            publicId
+        }
+        println("  Attempt 3: Delete with alternative resource type ($alternativeResourceType) without extension: $publicIdWithoutExt")
+        if (deleteFile(publicIdWithoutExt, alternativeResourceType)) {
+            println("  Success with alternative resource type (no extension)")
+            return true
+        }
+        
+        // Luego con extensión (si la tiene)
+        if (publicId.contains(".")) {
+            println("  Attempt 4: Delete with alternative resource type ($alternativeResourceType) with extension: $publicId")
+            if (deleteFile(publicId, alternativeResourceType)) {
+                println("  Success with alternative resource type (with extension)")
+                return true
+            }
+        }
+        
+        println("  All deletion attempts failed")
+        return false
     }
 
     /**

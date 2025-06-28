@@ -1,6 +1,7 @@
 package ar.edu.itba.harmos.services
 
 import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
+import ar.edu.itba.harmos.dtos.requests.EditAppUserRequest
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.AppUserRole
 import ar.edu.itba.harmos.models.Role
@@ -202,5 +203,45 @@ class AppUserService(
     fun validatePasswordResetToken(token: String): Boolean {
         val resetToken = passwordResetTokenRepository.findByToken(token) ?: return false
         return !resetToken.isExpired()
+    }
+
+    @Transactional
+    fun updateUser(id: Long, editAppUserRequest: EditAppUserRequest): AppUser? {
+        val user = appUserRepository.findById(id).orElse(null) ?: return null
+
+        // Update basic fields if provided
+        editAppUserRequest.firstName?.let { user.firstName = it.trim() }
+        editAppUserRequest.lastName?.let { user.lastName = it.trim() }
+        editAppUserRequest.phone?.let { user.phone = it.trim() }
+
+        // Update specialties if provided
+        editAppUserRequest.specialties?.let { specialtyNames ->
+            val resolvedSpecialties = try {
+                specialtyNames.mapNotNull { specialtyName ->
+                    specialtyService.getSpecialtyByName(specialtyName.trim())
+                }.toMutableSet()
+            } catch (e: Exception) {
+                return null
+            }
+            user.specialties.clear()
+            user.specialties.addAll(resolvedSpecialties)
+        }
+
+        // Update roles if provided
+        editAppUserRequest.roles?.let { roleNames ->
+            val resolvedRoles = roleNames.mapNotNull { roleName ->
+                AppUserRole.fromRoleName(roleName.trim())?.let { enumRole ->
+                    roleRepository.findByRole(enumRole.roleName)
+                }
+            }.toMutableSet()
+            
+            // If no valid roles provided, keep current roles
+            if (resolvedRoles.isNotEmpty()) {
+                user.roles.clear()
+                user.roles.addAll(resolvedRoles)
+            }
+        }
+
+        return appUserRepository.save(user)
     }
 }

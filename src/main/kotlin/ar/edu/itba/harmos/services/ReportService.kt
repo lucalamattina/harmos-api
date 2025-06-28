@@ -72,12 +72,18 @@ class ReportService(
         // No need for redundant checks here
 
         return try {
-            // Eliminar archivo de Cloudinary
+            // Eliminar archivo de Cloudinary usando método mejorado
             try {
-                val publicId = cloudinaryService.extractPublicId(report.fileUrl)
-                cloudinaryService.deleteFile(publicId, "raw")
+                println("Attempting to delete report file: ${report.fileUrl}")
+                val deleted = cloudinaryService.deleteFileEnhanced(report.fileUrl, "raw")
+                if (!deleted) {
+                    println("WARNING: Failed to delete report file from Cloudinary: ${report.fileUrl}")
+                } else {
+                    println("Successfully deleted report file from Cloudinary")
+                }
             } catch (e: Exception) {
                 println("Error eliminando archivo ${report.fileUrl}: ${e.message}")
+                e.printStackTrace()
             }
 
             // Eliminar reporte de la base de datos
@@ -85,6 +91,7 @@ class ReportService(
             true
         } catch (e: Exception) {
             println("Error eliminando reporte: ${e.message}")
+            e.printStackTrace()
             false
         }
     }

@@ -279,13 +279,12 @@ class AnnouncementController(
             ?: return ResponseEntity(mapOf("error" to "Anuncio no encontrado"), HttpStatus.NOT_FOUND)
 
         return try {
-            val publicId = cloudinaryService.extractPublicId(fileUrl)
             val resourceType = if (type == "image") "image" else "raw"
             
-            // Eliminar de Cloudinary
-            val deleted = cloudinaryService.deleteFile(publicId, resourceType)
+            // Eliminar de Cloudinary usando método mejorado
+            val deleted = cloudinaryService.deleteFileEnhanced(fileUrl, resourceType)
             if (!deleted) {
-                return ResponseEntity(mapOf("error" to "No se pudo eliminar el archivo"), HttpStatus.NOT_FOUND)
+                return ResponseEntity(mapOf("error" to "No se pudo eliminar el archivo de Cloudinary"), HttpStatus.NOT_FOUND)
             }
 
             // Eliminar de la base de datos

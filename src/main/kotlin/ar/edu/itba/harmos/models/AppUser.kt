@@ -7,9 +7,9 @@ import javax.persistence.*
 class AppUser (
     val email: String,
     var password: String,
-    val firstName: String,
-    val lastName: String,
-    val phone: String,
+    var firstName: String,
+    var lastName: String,
+    var phone: String,
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

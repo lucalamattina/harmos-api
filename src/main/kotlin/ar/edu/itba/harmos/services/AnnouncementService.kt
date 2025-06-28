@@ -102,10 +102,12 @@ class AnnouncementService(
             // Eliminar imágenes de Cloudinary
             announcement.images.forEach { imageUrl ->
                 try {
-                    val publicId = cloudinaryService.extractPublicId(imageUrl)
-                    println("Attempting to delete image with publicId: $publicId")
-                    val deleted = cloudinaryService.deleteFile(publicId, "image")
+                    println("Attempting to delete image: $imageUrl")
+                    val deleted = cloudinaryService.deleteFileEnhanced(imageUrl, "image")
                     println("Image deletion result: $deleted")
+                    if (!deleted) {
+                        println("WARNING: Failed to delete image from Cloudinary: $imageUrl")
+                    }
                 } catch (e: Exception) {
                     println("Error deleting image from Cloudinary: ${e.message}")
                     e.printStackTrace()
@@ -115,10 +117,12 @@ class AnnouncementService(
             // Eliminar archivos de Cloudinary
             announcement.files.forEach { fileUrl ->
                 try {
-                    val publicId = cloudinaryService.extractPublicId(fileUrl)
-                    println("Attempting to delete file with publicId: $publicId")
-                    val deleted = cloudinaryService.deleteFile(publicId, "raw")
+                    println("Attempting to delete file: $fileUrl")
+                    val deleted = cloudinaryService.deleteFileEnhanced(fileUrl, "raw")
                     println("File deletion result: $deleted")
+                    if (!deleted) {
+                        println("WARNING: Failed to delete file from Cloudinary: $fileUrl")
+                    }
                 } catch (e: Exception) {
                     println("Error deleting file from Cloudinary: ${e.message}")
                     e.printStackTrace()

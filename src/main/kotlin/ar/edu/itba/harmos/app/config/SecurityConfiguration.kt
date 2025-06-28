@@ -62,8 +62,10 @@ class SecurityConfiguration(
             .antMatchers(HttpMethod.POST, "/reports").authenticated()
             // Permitir a todos los usuarios autenticados ver todos los reportes
             .antMatchers(HttpMethod.GET, "/reports/all").authenticated()
-            // Solo los POST requieren rol de administrador
+            // Solo los POST y DELETE requieren rol de administrador
             .antMatchers(HttpMethod.POST, "/users").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.DELETE, "/users/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.PUT, "/users/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.POST, "/specialties").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.POST, "/locations").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.DELETE, "/locations/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)

@@ -2,6 +2,7 @@ package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.responses.AppUserResponse
 import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
+import ar.edu.itba.harmos.dtos.requests.EditAppUserRequest
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.ScheduleResponse
 import ar.edu.itba.harmos.models.AppUser
@@ -41,6 +42,20 @@ class UserController(
         return if (appUser != null) {
             ResponseEntity(AppUserResponse.singleFromModel(appUser), HttpStatus.CREATED)
         } else ResponseEntity(HttpStatus.BAD_REQUEST)
+    }
+
+    @PutMapping("/{id}")
+    @ResponseBody
+    fun updateUser(
+        @PathVariable id: Long,
+        @RequestBody editAppUserRequest: EditAppUserRequest
+    ): ResponseEntity<Any> {
+        val updatedUser = appUserService.updateUser(id, editAppUserRequest)
+        return if (updatedUser != null) {
+            ResponseEntity(AppUserResponse.singleFromModel(updatedUser), HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        }
     }
 
     @GetMapping("/{id}")
