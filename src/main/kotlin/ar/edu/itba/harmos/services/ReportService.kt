@@ -105,25 +105,12 @@ class ReportService(
         }
     }
     
-    fun getAllReports(): List<Report> {
-        return reportRepository.findAll().toList()
-    }
-    
-    fun getReportsByPatientId(patientId: Long, specialtyId: Long? = null): List<Report> {
-        return if (specialtyId != null) {
-            reportRepository.findByPatientIdAndSpecialtyIdOrderByDateDesc(patientId, specialtyId)
-        } else {
-            reportRepository.findByPatientIdOrderByDateDesc(patientId)
-        }
-    }
+
     
     fun getReportsByDoctorId(doctorId: Long): List<Report> {
         return reportRepository.findByDoctorIdOrderByDateDesc(doctorId)
     }
 
-    fun getReportsBySpecialtyId(specialtyId: Long): List<Report> {
-        return reportRepository.findBySpecialtyId(specialtyId)
-    }
 
     fun getReportsForDoctor(doctor: AppUser, patientId: Long? = null, specialtyId: Long? = null): List<Report> {
         return when {
@@ -271,28 +258,4 @@ class ReportService(
         }
     }
 
-    /**
-     * Get reports by patient ID with pagination
-     */
-    fun getReportsByPatientIdPaginated(patientId: Long, specialtyId: Long? = null, pageable: Pageable): Page<Report> {
-        return if (specialtyId != null) {
-            reportRepository.findByPatientIdAndSpecialtyIdOrderByDateDesc(patientId, specialtyId, pageable)
-        } else {
-            reportRepository.findByPatientIdOrderByDateDesc(patientId, pageable)
-        }
-    }
-
-    /**
-     * Get reports by doctor ID with pagination
-     */
-    fun getReportsByDoctorIdPaginated(doctorId: Long, pageable: Pageable): Page<Report> {
-        return reportRepository.findByDoctorIdOrderByDateDesc(doctorId, pageable)
-    }
-
-    /**
-     * Get reports by specialty ID with pagination
-     */
-    fun getReportsBySpecialtyIdPaginated(specialtyId: Long, pageable: Pageable): Page<Report> {
-        return reportRepository.findBySpecialtyIdOrderByDateDesc(specialtyId, pageable)
-    }
 } 

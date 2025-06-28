@@ -386,58 +386,6 @@ class CloudinaryService(
     }
 
     /**
-     * Función de diagnóstico para probar conectividad con Cloudinary
-     */
-    fun testConnection(): Map<String, Any> {
-        return try {
-            // Test básico de conectividad usando recursos existentes
-            val resources = cloudinary.api().resources(ObjectUtils.asMap("max_results", 1))
-            
-            // Información de la cuenta
-            mapOf(
-                "cloud_name" to cloudName,
-                "api_key_prefix" to apiKey.take(4) + "****",
-                "connection_status" to "OK",
-                "resources_found" to ((resources["resources"] as? List<*>)?.size ?: 0)
-            )
-        } catch (e: Exception) {
-            mapOf(
-                "cloud_name" to cloudName,
-                "api_key_prefix" to apiKey.take(4) + "****",
-                "connection_status" to "ERROR",
-                "error" to (e.message ?: "Unknown error"),
-                "error_type" to e.javaClass.simpleName
-            )
-        }
-    }
-    
-    /**
-     * Función para probar URLs generadas vs URLs directas de Cloudinary
-     */
-    fun testUrlGeneration(publicId: String): Map<String, Any> {
-        return try {
-            val manualRawUrl = "https://res.cloudinary.com/$cloudName/raw/upload/$publicId"
-            val manualImageUrl = "https://res.cloudinary.com/$cloudName/image/upload/$publicId"
-            val sdkGeneratedUrl = cloudinary.url().resourceType("raw").secure(true).generate(publicId) ?: ""
-            val sdkImageUrl = cloudinary.url().resourceType("image").secure(true).generate(publicId) ?: ""
-            
-            mapOf(
-                "public_id" to publicId,
-                "manual_raw_url" to manualRawUrl,
-                "manual_image_url" to manualImageUrl,
-                "sdk_raw_url" to sdkGeneratedUrl,
-                "sdk_image_url" to sdkImageUrl,
-                "cloud_name" to cloudName
-            )
-        } catch (e: Exception) {
-            mapOf(
-                "error" to (e.message ?: "Unknown error"),
-                "error_type" to e.javaClass.simpleName
-            )
-        }
-    }
-
-    /**
      * Genera URLs firmadas que evitan restricciones de seguridad
      */
     fun getSignedUrl(publicId: String, resourceType: String = "raw"): String {

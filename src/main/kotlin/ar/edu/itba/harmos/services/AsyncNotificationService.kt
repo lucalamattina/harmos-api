@@ -40,7 +40,7 @@ class AsyncNotificationService(
                 
                 // Create notifications in batch
                 val notifications = users
-                    //.filter { it.id != createdBy.id } //TODO: Exclude creator descomentar
+                    .filter { it.id != createdBy.id }
                     .map { user ->
                         Notification(
                             message = "New announcement: ${announcement.title}",

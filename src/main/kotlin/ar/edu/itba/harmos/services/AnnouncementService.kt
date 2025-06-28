@@ -42,7 +42,7 @@ class AnnouncementService(
             specialties,
             createdBy
         )
-        val savedAnnouncement = announcementRepository.save(announcement)//TODO: DEBERIA SER EL ID DEL ANUNCIO
+        val savedAnnouncement = announcementRepository.save(announcement)
 
         // Process notifications asynchronously using separate service
         asyncNotificationService.processAnnouncementNotificationsAsync(

@@ -7,4 +7,3 @@ data class CreatePatientRequest(
     val phone: String,
     val status: PatientStatus = PatientStatus.PENDING
 )
-//TODO: CHECK, tendria q haber mas? agregar doctores? status?

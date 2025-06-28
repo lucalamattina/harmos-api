@@ -24,17 +24,12 @@ class ReportController(
     private val reportService: ReportService,
     private val cloudinaryService: CloudinaryService
 ) {
-
-    // ========================= HELPER FUNCTIONS =========================
-
     /**
      * Check if the user has administrator role
      */
     private fun isAdmin(user: AppUser): Boolean {
         return user.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
     }
-
-    // ========================= CRUD OPERATIONS =========================
 
     @PostMapping(consumes = ["multipart/form-data"])
     @ResponseBody
@@ -281,63 +276,6 @@ class ReportController(
         }
     }
 
-    @PutMapping("/{id}")
-    @ResponseBody
-    fun updateReport(
-        @PathVariable id: Long,
-        @RequestBody editReportRequest: EditReportRequest,
-        @CurrentUser appUser: AppUser?
-    ): ResponseEntity<Any> {
-        // Authentication check
-        if (appUser == null) {
-            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
-        }
-
-        // ID validation
-        if (id <= 0) {
-            return ResponseEntity(mapOf("error" to "ID del reporte inválido"), HttpStatus.BAD_REQUEST)
-        }
-
-        // Input validation
-        if (editReportRequest.title != null) {
-            val title = editReportRequest.title
-            if (title.isBlank()) {
-                return ResponseEntity(mapOf("error" to "El título no puede estar vacío"), HttpStatus.BAD_REQUEST)
-            }
-            if (title.length > 255) {
-                return ResponseEntity(mapOf("error" to "El título no puede exceder 255 caracteres"), HttpStatus.BAD_REQUEST)
-            }
-        }
-
-        return try {
-            // Verificar que el reporte existe antes de intentar actualizarlo
-            val existingReport = reportService.getReportById(id)
-            if (existingReport == null) {
-                return ResponseEntity(mapOf("error" to "Reporte no encontrado"), HttpStatus.NOT_FOUND)
-            }
-
-            // Verificar que el usuario tiene permisos para actualizar el reporte
-            if (!isAdmin(appUser) && existingReport.doctor.id != appUser.id) {
-                return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte o un administrador puede editarlo"), HttpStatus.FORBIDDEN)
-            }
-
-            val updatedReport = reportService.updateReport(id, editReportRequest, appUser)
-                ?: return ResponseEntity(mapOf("error" to "No se pudo actualizar el reporte"), HttpStatus.INTERNAL_SERVER_ERROR)
-            
-            ResponseEntity(ReportResponse.singleFromModel(updatedReport, cloudinaryService), HttpStatus.OK)
-        } catch (e: IllegalArgumentException) {
-            ResponseEntity(mapOf("error" to "Datos inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
-        } catch (e: IllegalAccessException) {
-            ResponseEntity(mapOf("error" to e.message), HttpStatus.FORBIDDEN)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            ResponseEntity(
-                mapOf("error" to "Error al actualizar el reporte. Inténtelo de nuevo más tarde"),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            )
-        }
-    }
-
     @DeleteMapping("/{id}")
     fun deleteReport(
         @PathVariable id: Long,
@@ -384,7 +322,7 @@ class ReportController(
         }
     }
 
-    // ========================= FILE OPERATIONS =========================
+
 
     @GetMapping("/{id}/file")
     fun getReportFile(
