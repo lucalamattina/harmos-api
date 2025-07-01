@@ -123,14 +123,27 @@ class UserController(
 
     @PostMapping("/forgot-password")
     fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<ForgotPasswordResponse> {
+        println("=== FORGOT PASSWORD REQUEST ===")
+        println("Received email: '${forgotPasswordRequest.email}'")
+        println("Email length: ${forgotPasswordRequest.email.length}")
+        println("Email trimmed: '${forgotPasswordRequest.email.trim()}'")
+        
         // Validar el DTO
         if (!forgotPasswordRequest.isValid()) {
             val error = forgotPasswordRequest.getValidationError() ?: "Datos inválidos"
-            return ResponseEntity(ForgotPasswordResponse.error(error), HttpStatus.BAD_REQUEST)
+            println("Validation failed: $error")
+            return ResponseEntity(
+                ForgotPasswordResponse.validationError(error, forgotPasswordRequest.email), 
+                HttpStatus.BAD_REQUEST
+            )
         }
+        
+        println("Email validation passed")
 
         // Verificar si el usuario existe
-        val userExists = appUserService.getAppUserByEmail(forgotPasswordRequest.email) != null
+        val userExists = appUserService.getAppUserByEmail(forgotPasswordRequest.email.trim()) != null
+        println("User exists: $userExists")
+        
         if (!userExists) {
             return ResponseEntity(
                 ForgotPasswordResponse.error("No se encontró un usuario con este email"), 
@@ -139,11 +152,22 @@ class UserController(
         }
 
         // Intentar crear el token de reset
-        return if (appUserService.createPasswordResetTokenForUser(forgotPasswordRequest.email)) {
-            ResponseEntity(ForgotPasswordResponse.success(), HttpStatus.OK)
-        } else {
+        return try {
+            if (appUserService.createPasswordResetTokenForUser(forgotPasswordRequest.email.trim())) {
+                println("Password reset token created successfully")
+                ResponseEntity(ForgotPasswordResponse.success(), HttpStatus.OK)
+            } else {
+                println("Failed to create password reset token")
+                ResponseEntity(
+                    ForgotPasswordResponse.error("No se pudo procesar la solicitud. Inténtalo de nuevo más tarde."), 
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                )
+            }
+        } catch (e: Exception) {
+            println("Exception creating password reset token: ${e.message}")
+            e.printStackTrace()
             ResponseEntity(
-                ForgotPasswordResponse.error("Error interno del servidor"), 
+                ForgotPasswordResponse.error("Error interno del servidor: ${e.message}"), 
                 HttpStatus.INTERNAL_SERVER_ERROR
             )
         }

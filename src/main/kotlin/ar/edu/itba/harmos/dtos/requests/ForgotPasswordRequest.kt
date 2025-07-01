@@ -1,16 +1,23 @@
 package ar.edu.itba.harmos.dtos.requests
 
 data class ForgotPasswordRequest(
-    val email: String
+    val email: String = ""
 ) {
     fun isValid(): Boolean {
-        return email.isNotBlank() && isValidEmail(email)
+        val trimmedEmail = email.trim()
+        return trimmedEmail.isNotBlank() && isValidEmail(trimmedEmail)
     }
 
     fun getValidationError(): String? {
+        val trimmedEmail = email.trim()
         return when {
             email.isBlank() -> "El email es obligatorio"
-            !isValidEmail(email) -> "El email debe tener un formato válido"
+            trimmedEmail.isBlank() -> "El email no puede estar vacío"
+            trimmedEmail.contains("=") -> "El formato del email no es válido. Formato correcto: usuario@dominio.com"
+            !trimmedEmail.contains("@") -> "El email debe contener el símbolo @"
+            !trimmedEmail.contains(".") -> "El email debe contener un dominio válido (ej: .com, .org)"
+            trimmedEmail.startsWith("@") -> "El email no puede empezar con @"
+            trimmedEmail.endsWith("@") -> "El email debe tener un dominio después del @"
             else -> null
         }
     }
