@@ -3,6 +3,8 @@ package ar.edu.itba.harmos.app.controller
 import ar.edu.itba.harmos.dtos.responses.AppUserResponse
 import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
 import ar.edu.itba.harmos.dtos.requests.EditAppUserRequest
+import ar.edu.itba.harmos.dtos.requests.ForgotPasswordRequest
+import ar.edu.itba.harmos.dtos.responses.ForgotPasswordResponse
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.ScheduleResponse
 import ar.edu.itba.harmos.models.AppUser
@@ -120,11 +122,30 @@ class UserController(
     }
 
     @PostMapping("/forgot-password")
-    fun forgotPassword(@RequestParam email: String): ResponseEntity<Any> {
-        return if (appUserService.createPasswordResetTokenForUser(email)) {
-            ResponseEntity.ok().build()
+    fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<ForgotPasswordResponse> {
+        // Validar el DTO
+        if (!forgotPasswordRequest.isValid()) {
+            val error = forgotPasswordRequest.getValidationError() ?: "Datos inválidos"
+            return ResponseEntity(ForgotPasswordResponse.error(error), HttpStatus.BAD_REQUEST)
+        }
+
+        // Verificar si el usuario existe
+        val userExists = appUserService.getAppUserByEmail(forgotPasswordRequest.email) != null
+        if (!userExists) {
+            return ResponseEntity(
+                ForgotPasswordResponse.error("No se encontró un usuario con este email"), 
+                HttpStatus.NOT_FOUND
+            )
+        }
+
+        // Intentar crear el token de reset
+        return if (appUserService.createPasswordResetTokenForUser(forgotPasswordRequest.email)) {
+            ResponseEntity(ForgotPasswordResponse.success(), HttpStatus.OK)
         } else {
-            ResponseEntity.notFound().build()
+            ResponseEntity(
+                ForgotPasswordResponse.error("Error interno del servidor"), 
+                HttpStatus.INTERNAL_SERVER_ERROR
+            )
         }
     }
 

@@ -58,6 +58,10 @@ class SecurityConfiguration(
             .authorizeRequests()
             .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Permitir OPTIONS para CORS
             .antMatchers(AUTHENTICATE_URL).permitAll() // Permitir cualquier método en /authenticate
+            // Permitir endpoints de recuperación de contraseña sin autenticación
+            .antMatchers(HttpMethod.POST, "/users/forgot-password").permitAll()
+            .antMatchers(HttpMethod.GET, "/users/validate-reset-token").permitAll()
+            .antMatchers(HttpMethod.POST, "/users/reset-password").permitAll()
             // Permitir POST en /reports para cualquier usuario autenticado
             .antMatchers(HttpMethod.POST, "/reports").authenticated()
             // Permitir a todos los usuarios autenticados ver todos los reportes
