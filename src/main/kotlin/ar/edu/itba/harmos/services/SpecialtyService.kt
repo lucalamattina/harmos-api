@@ -1,6 +1,7 @@
 package ar.edu.itba.harmos.services
 
 import ar.edu.itba.harmos.dtos.requests.CreateSpecialtyRequest
+import ar.edu.itba.harmos.dtos.requests.EditSpecialtyRequest
 import ar.edu.itba.harmos.models.Specialty
 import ar.edu.itba.harmos.persistence.SpecialtyRepository
 import ar.edu.itba.harmos.persistence.AppUserRepository
@@ -47,7 +48,7 @@ class SpecialtyService(
         // Remover de usuarios
         appUserRepository.findAll().forEach { user ->
             if (user.specialties.remove(specialty)) {
-                appUserRepository.save(user)                                                                                                                                                                                                                                                                                                                            
+                appUserRepository.save(user)                                                                                                                                                                                                                                                                                                            
             }
         }
         // Remover de anuncios
@@ -58,6 +59,30 @@ class SpecialtyService(
         }
         specialtyRepository.delete(specialty)
         return true
+    }
+
+    fun updateSpecialty(id: Long, editSpecialtyRequest: EditSpecialtyRequest): Specialty? {
+        val specialtyOpt = specialtyRepository.findById(id)
+        if (!specialtyOpt.isPresent) {
+            return null
+        }
+        
+        val currentSpecialty = specialtyOpt.get()
+        
+        // Only update name if provided (data field is not used in the model)
+        val newName = editSpecialtyRequest.name ?: currentSpecialty.name
+        
+        // Check if name is already taken by another specialty
+        if (newName != currentSpecialty.name) {
+            val existingSpecialty = specialtyRepository.findByName(newName)
+            if (existingSpecialty != null) {
+                throw IllegalArgumentException("Specialty with name '$newName' already exists")
+            }
+        }
+        
+        // Create new instance with updated name (following LocationService pattern)
+        val updatedSpecialty = Specialty(newName, id = currentSpecialty.id)
+        return specialtyRepository.save(updatedSpecialty)
     }
     
 }

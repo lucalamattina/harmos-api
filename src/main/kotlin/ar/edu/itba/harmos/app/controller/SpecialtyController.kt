@@ -2,6 +2,7 @@ package ar.edu.itba.harmos.app.controller
 
 import ar.edu.itba.harmos.dtos.responses.SpecialtyResponse
 import ar.edu.itba.harmos.dtos.requests.CreateSpecialtyRequest
+import ar.edu.itba.harmos.dtos.requests.EditSpecialtyRequest
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.ScheduleResponse
 import ar.edu.itba.harmos.services.AnnouncementService
@@ -54,6 +55,24 @@ class SpecialtyController(
     fun getAll(): ResponseEntity<Any> {
         val specialties = specialtyService.getAllSpecialties()
         return ResponseEntity(SpecialtyResponse.listFromModel(specialties), HttpStatus.OK)
+    }
+
+    @PutMapping("/{id}")
+    @ResponseBody
+    fun update(@PathVariable id: Long, @RequestBody editSpecialtyRequest: EditSpecialtyRequest): ResponseEntity<Any> {
+        return try {
+            val updatedSpecialty = specialtyService.updateSpecialty(id, editSpecialtyRequest)
+            if (updatedSpecialty != null) {
+                ResponseEntity(SpecialtyResponse.singleFromModel(updatedSpecialty), HttpStatus.OK)
+            } else {
+                ResponseEntity(HttpStatus.NOT_FOUND)
+            }
+        } catch (e: IllegalArgumentException) {
+            val errorResponse = mapOf("error" to e.message)
+            ResponseEntity(errorResponse, HttpStatus.CONFLICT)
+        } catch (e: Exception) {
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
     }
 
     @DeleteMapping("/{id}")
