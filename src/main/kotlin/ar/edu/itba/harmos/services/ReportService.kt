@@ -4,6 +4,7 @@ import ar.edu.itba.harmos.dtos.requests.CreateReportRequest
 import ar.edu.itba.harmos.dtos.requests.EditReportRequest
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.AppUserRole
+import ar.edu.itba.harmos.models.Notification
 import ar.edu.itba.harmos.models.Report
 import ar.edu.itba.harmos.persistence.ReportRepository
 import org.springframework.data.domain.Page
@@ -15,7 +16,8 @@ class ReportService(
     private val reportRepository: ReportRepository,
     private val patientService: PatientService,
     private val specialtyService: SpecialtyService,
-    private val cloudinaryService: CloudinaryService
+    private val cloudinaryService: CloudinaryService,
+    private val notificationService: NotificationService
 ) {
     
     fun createReportWithFile(createReportRequest: CreateReportRequest, doctor: AppUser, fileUrl: String): Report? {
@@ -46,7 +48,25 @@ class ReportService(
             fileUrl = fileUrl
         )
 
-        return reportRepository.save(report)
+        val savedReport = reportRepository.save(report)
+
+        // Notificar al dueño del reporte (el doctor que lo creó) solo si no es él mismo
+        if (savedReport.doctor.id != doctor.id) {
+            try {
+                val creatorName = doctor.name
+                val notification = Notification(
+                    message = "Se ha creado un nuevo reporte por $creatorName para tu paciente ${savedReport.patient.name}: ${savedReport.title}",
+                    user = savedReport.doctor,
+                    reportId = savedReport.id
+                )
+                notificationService.create(notification)
+            } catch (e: Exception) {
+                println("Error creating notification for report ${savedReport.id}: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        return savedReport
     }
 
     fun updateReport(id: Long, editReportRequest: EditReportRequest, doctor: AppUser, newFile: org.springframework.web.multipart.MultipartFile? = null): Report? {
@@ -128,7 +148,25 @@ class ReportService(
             id = report.id
         )
 
-        return reportRepository.save(updatedReport)
+        val savedReport = reportRepository.save(updatedReport)
+
+        // Notificar al dueño del reporte original (el doctor que lo creó) solo si no es él mismo
+        if (savedReport.doctor.id != doctor.id) {
+            try {
+                val editorName = doctor.name
+                val notification = Notification(
+                    message = "Se ha modificado por $editorName tu reporte del paciente ${savedReport.patient.name}: ${savedReport.title}",
+                    user = savedReport.doctor,
+                    reportId = savedReport.id
+                )
+                notificationService.create(notification)
+            } catch (e: Exception) {
+                println("Error creating notification for report update ${savedReport.id}: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        return savedReport
     }
 
     fun deleteReport(id: Long, doctor: AppUser): Boolean {

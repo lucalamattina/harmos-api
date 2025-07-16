@@ -22,11 +22,14 @@ class Notification(
     @Column(nullable = true)
     val announcementId: Long? = null,
 
+    @Column(nullable = true)
+    val reportId: Long? = null,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
-    constructor() : this("", false, LocalDateTime.now(), AppUser(), null)
+    constructor() : this("", false, LocalDateTime.now(), AppUser(), null, null)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
