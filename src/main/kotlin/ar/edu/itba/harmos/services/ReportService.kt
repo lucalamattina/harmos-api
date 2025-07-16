@@ -3,6 +3,7 @@ package ar.edu.itba.harmos.services
 import ar.edu.itba.harmos.dtos.requests.CreateReportRequest
 import ar.edu.itba.harmos.dtos.requests.EditReportRequest
 import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.models.AppUserRole
 import ar.edu.itba.harmos.models.Report
 import ar.edu.itba.harmos.persistence.ReportRepository
 import org.springframework.data.domain.Page
@@ -24,14 +25,17 @@ class ReportService(
         val specialty = specialtyService.getSpecialtyById(createReportRequest.specialtyId)
             ?: return null
 
-        // Verificar que el doctor tenga acceso al paciente
-        if (!patient.doctors.contains(doctor)) {
-            throw IllegalAccessException("El doctor no tiene acceso a este paciente")
-        }
+        // Verificar permisos solo si NO es administrador
+        if (!isAdmin(doctor)) {
+            // Verificar que el doctor tenga acceso al paciente
+            if (!patient.doctors.contains(doctor)) {
+                throw IllegalAccessException("El doctor no tiene acceso a este paciente")
+            }
 
-        // Verificar que el doctor tenga la especialidad
-        if (!doctor.specialties.contains(specialty)) {
-            throw IllegalAccessException("El doctor no tiene esta especialidad")
+            // Verificar que el doctor tenga la especialidad
+            if (!doctor.specialties.contains(specialty)) {
+                throw IllegalAccessException("El doctor no tiene esta especialidad")
+            }
         }
 
         val report = Report(
@@ -45,19 +49,81 @@ class ReportService(
         return reportRepository.save(report)
     }
 
-    fun updateReport(id: Long, editReportRequest: EditReportRequest, doctor: AppUser): Report? {
+    fun updateReport(id: Long, editReportRequest: EditReportRequest, doctor: AppUser, newFile: org.springframework.web.multipart.MultipartFile? = null): Report? {
         val report = getReportById(id) ?: return null
 
         // Authorization is now handled in the controller
         // No need for redundant checks here
 
+        // Resolver paciente si se proporciona un nuevo patientId
+        val patient = if (editReportRequest.patientId != null) {
+            val newPatient = patientService.getPatientById(editReportRequest.patientId)
+                ?: throw IllegalArgumentException("Paciente no encontrado")
+            
+            // Verificar que el doctor tenga acceso al nuevo paciente (solo si no es admin)
+            if (!isAdmin(doctor) && !newPatient.doctors.contains(doctor)) {
+                throw IllegalAccessException("El doctor no tiene acceso a este paciente")
+            }
+            newPatient
+        } else {
+            report.patient
+        }
+
+        // Resolver especialidad si se proporciona un nuevo specialtyId
+        val specialty = if (editReportRequest.specialtyId != null) {
+            val newSpecialty = specialtyService.getSpecialtyById(editReportRequest.specialtyId)
+                ?: throw IllegalArgumentException("Especialidad no encontrada")
+            
+            // Verificar que el doctor tenga la especialidad (solo si no es admin)
+            if (!isAdmin(doctor) && !doctor.specialties.contains(newSpecialty)) {
+                throw IllegalAccessException("El doctor no tiene esta especialidad")
+            }
+            newSpecialty
+        } else {
+            report.specialty
+        }
+
+        // Manejar actualización del archivo si se proporciona
+        var newFileUrl = report.fileUrl
+        if (newFile != null && !newFile.isEmpty) {
+            try {
+                // Subir el nuevo archivo
+                val uploadedFileUrl = cloudinaryService.uploadDocument(newFile, "reports")
+                if (uploadedFileUrl.isBlank()) {
+                    throw RuntimeException("Error al subir el nuevo archivo")
+                }
+                
+                // Borrar el archivo anterior si existe
+                if (report.fileUrl.isNotBlank()) {
+                    try {
+                        println("Attempting to delete old report file: ${report.fileUrl}")
+                        val deleted = cloudinaryService.deleteFileEnhanced(report.fileUrl, "raw")
+                        if (!deleted) {
+                            println("WARNING: Failed to delete old report file from Cloudinary: ${report.fileUrl}")
+                        } else {
+                            println("Successfully deleted old report file from Cloudinary")
+                        }
+                    } catch (e: Exception) {
+                        println("Error eliminando archivo anterior ${report.fileUrl}: ${e.message}")
+                        e.printStackTrace()
+                    }
+                }
+                
+                newFileUrl = uploadedFileUrl
+            } catch (e: Exception) {
+                println("Error actualizando archivo del reporte: ${e.message}")
+                e.printStackTrace()
+                throw RuntimeException("Error al actualizar el archivo del reporte: ${e.message}")
+            }
+        }
+
         // Crear un nuevo reporte con los valores actualizados
         val updatedReport = Report(
             title = editReportRequest.title ?: report.title,
-            patient = report.patient,
+            patient = patient,
             doctor = report.doctor,
-            specialty = report.specialty,
-            fileUrl = report.fileUrl,
+            specialty = specialty,
+            fileUrl = newFileUrl,
             date = report.date,
             id = report.id
         )
@@ -133,6 +199,10 @@ class ReportService(
     private fun canDoctorAccessReport(doctor: AppUser, report: Report): Boolean {
         // El doctor puede acceder si es el creador o si tiene acceso al paciente
         return report.doctor.id == doctor.id || report.patient.doctors.contains(doctor)
+    }
+
+    private fun isAdmin(user: AppUser): Boolean {
+        return user.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
     }
 
     // ========================= PAGINATED METHODS =========================

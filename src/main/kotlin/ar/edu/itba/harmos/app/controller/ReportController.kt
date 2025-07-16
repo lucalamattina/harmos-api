@@ -276,6 +276,127 @@ class ReportController(
         }
     }
 
+    @PutMapping("/{id}", consumes = ["multipart/form-data"])
+    @ResponseBody
+    fun updateReport(
+        @PathVariable id: Long,
+        @RequestParam(required = false) title: String?,
+        @RequestParam(required = false) patientId: Long?,
+        @RequestParam(required = false) specialtyId: Long?,
+        @RequestParam(required = false) file: MultipartFile?,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        // Authentication check
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+
+        // ID validation
+        if (id <= 0) {
+            return ResponseEntity(mapOf("error" to "ID del reporte inválido"), HttpStatus.BAD_REQUEST)
+        }
+
+        // Verificar que el reporte existe
+        val existingReport = reportService.getReportById(id)
+            ?: return ResponseEntity(mapOf("error" to "Reporte no encontrado"), HttpStatus.NOT_FOUND)
+
+        // Verificar que el usuario tiene permisos para editar el reporte
+        if (!isAdmin(appUser) && existingReport.doctor.id != appUser.id) {
+            return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte o un administrador puede editarlo"), HttpStatus.FORBIDDEN)
+        }
+
+        // Input validation
+        if (title != null && title.isBlank()) {
+            return ResponseEntity(mapOf("error" to "El título no puede estar vacío"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (title != null && title.length > 255) {
+            return ResponseEntity(mapOf("error" to "El título no puede exceder 255 caracteres"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (patientId != null && patientId <= 0) {
+            return ResponseEntity(mapOf("error" to "ID del paciente inválido"), HttpStatus.BAD_REQUEST)
+        }
+
+        if (specialtyId != null && specialtyId <= 0) {
+            return ResponseEntity(mapOf("error" to "ID de la especialidad inválido"), HttpStatus.BAD_REQUEST)
+        }
+
+        // File validation (si se proporciona un archivo)
+        if (file != null && !file.isEmpty) {
+            val originalFilename = file.originalFilename
+            if (originalFilename.isNullOrBlank()) {
+                return ResponseEntity(mapOf("error" to "El archivo debe tener un nombre válido"), HttpStatus.BAD_REQUEST)
+            }
+
+            // File size validation (25MB max)
+            if (file.size > 25 * 1024 * 1024) {
+                return ResponseEntity(mapOf("error" to "El archivo es muy grande (máximo 25MB)"), HttpStatus.BAD_REQUEST)
+            }
+
+            // File size minimum validation (1KB min)
+            if (file.size < 1024) {
+                return ResponseEntity(mapOf("error" to "El archivo es muy pequeño (mínimo 1KB)"), HttpStatus.BAD_REQUEST)
+            }
+
+            // File type validation
+            val allowedContentTypes = listOf(
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "text/plain",
+                "image/jpeg",
+                "image/jpg",
+                "image/png"
+            )
+
+            val fileContentType = file.contentType
+            if (fileContentType == null || !allowedContentTypes.contains(fileContentType)) {
+                return ResponseEntity(
+                    mapOf("error" to "Tipo de archivo no permitido. Formatos permitidos: PDF, DOC, DOCX, TXT, JPG, JPEG, PNG"),
+                    HttpStatus.BAD_REQUEST
+                )
+            }
+
+            // File extension validation
+            val filename = originalFilename.lowercase()
+            val allowedExtensions = listOf(".pdf", ".doc", ".docx", ".txt", ".jpg", ".jpeg", ".png")
+            if (!allowedExtensions.any { filename.endsWith(it) }) {
+                return ResponseEntity(
+                    mapOf("error" to "Extensión de archivo no permitida. Extensiones permitidas: ${allowedExtensions.joinToString(", ")}"),
+                    HttpStatus.BAD_REQUEST
+                )
+            }
+        }
+
+        // Validar que al menos un campo se está actualizando
+        if (title == null && patientId == null && specialtyId == null && (file == null || file.isEmpty)) {
+            return ResponseEntity(mapOf("error" to "Debe proporcionar al menos un campo para actualizar"), HttpStatus.BAD_REQUEST)
+        }
+
+        return try {
+            val editReportRequest = EditReportRequest(
+                title = title?.trim(),
+                patientId = patientId,
+                specialtyId = specialtyId
+            )
+
+            val updatedReport = reportService.updateReport(id, editReportRequest, appUser, file)
+                ?: return ResponseEntity(mapOf("error" to "No se pudo actualizar el reporte"), HttpStatus.INTERNAL_SERVER_ERROR)
+
+            ResponseEntity(ReportResponse.singleFromModel(updatedReport, cloudinaryService), HttpStatus.OK)
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity(mapOf("error" to "Datos inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
+        } catch (e: IllegalAccessException) {
+            ResponseEntity(mapOf("error" to e.message), HttpStatus.FORBIDDEN)
+        } catch (e: RuntimeException) {
+            ResponseEntity(mapOf("error" to e.message), HttpStatus.INTERNAL_SERVER_ERROR)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ResponseEntity(mapOf("error" to "Error interno del servidor. Inténtelo de nuevo más tarde"), HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
+
     @DeleteMapping("/{id}")
     fun deleteReport(
         @PathVariable id: Long,
