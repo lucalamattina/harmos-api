@@ -17,7 +17,8 @@ class ReportService(
     private val patientService: PatientService,
     private val specialtyService: SpecialtyService,
     private val cloudinaryService: CloudinaryService,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val asyncNotificationService: AsyncNotificationService
 ) {
     
     fun createReportWithFile(createReportRequest: CreateReportRequest, doctor: AppUser, fileUrl: String): Report? {
@@ -160,6 +161,7 @@ class ReportService(
                     reportId = savedReport.id
                 )
                 notificationService.create(notification)
+                asyncNotificationService.sendReportModifiedEmailAsync(savedReport, doctor)
             } catch (e: Exception) {
                 println("Error creating notification for report update ${savedReport.id}: ${e.message}")
                 e.printStackTrace()

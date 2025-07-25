@@ -4,6 +4,7 @@ import ar.edu.itba.harmos.models.Announcement
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.Notification
 import ar.edu.itba.harmos.models.EmailTemplate
+import ar.edu.itba.harmos.models.Report
 import ar.edu.itba.harmos.models.Specialty
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
@@ -108,6 +109,28 @@ class AsyncNotificationService(
             
         } catch (e: Exception) {
             logger.error("Error sending announcement emails: ${e.message}", e)
+        }
+    }
+
+    @Async("taskExecutor")
+    fun sendReportModifiedEmailAsync(report: Report, editor: AppUser) {
+        logger.debug("Starting async email sending for modified report ${report.id} on thread: ${Thread.currentThread().name}")
+        try {
+            val reportLink = "$frontendUrl/reports/${report.id}"
+            val owner = report.doctor
+
+            if (owner.id != editor.id) {
+                val template = EmailTemplate.reportModified(
+                    reportTitle = report.title,
+                    patientName = report.patient.name,
+                    editorName = editor.name,
+                    link = reportLink
+                )
+                emailService.sendEmail(owner.email, template)
+                logger.info("Sent report modified email to ${owner.email} for report ${report.id}")
+            }
+        } catch (e: Exception) {
+            logger.error("Error sending report modified email for report ${report.id}: ${e.message}", e)
         }
     }
 } 

@@ -102,5 +102,39 @@ data class EmailTemplate(
                 """.trimIndent()
             )
         }
+
+        fun reportModified(
+            reportTitle: String,
+            patientName: String,
+            editorName: String,
+            link: String
+        ): EmailTemplate {
+            val subject = "Reporte Modificado: $reportTitle"
+            val body = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: sans-serif; }
+                    .container { padding: 20px; }
+                    .header { font-size: 24px; color: #333; }
+                    .content { margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">Reporte Modificado</div>
+                    <div class="content">
+                        <p>Hola,</p>
+                        <p>El reporte "<strong>$reportTitle</strong>" para el paciente <strong>$patientName</strong> ha sido modificado por <strong>$editorName</strong>.</p>
+                        <p>Puedes ver los detalles en el siguiente enlace:</p>
+                        <p><a href="$link">Ver Reporte</a></p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.trimIndent()
+            return EmailTemplate(subject, body, true)
+        }
     }
 } 
