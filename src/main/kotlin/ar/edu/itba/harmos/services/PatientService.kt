@@ -23,12 +23,16 @@ class PatientService(
 ) {
 
     fun createPatient(createPatientRequest: CreatePatientRequest): Patient {
+        val doctors = createPatientRequest.doctorIds?.let {
+            appUserRepository.findAllById(it)
+        } ?: mutableListOf()
+
         val patient = Patient(
             firstName = createPatientRequest.firstName,
             lastName = createPatientRequest.lastName,
             phone = createPatientRequest.phone,
             status = createPatientRequest.status,
-            doctors = mutableListOf(),
+            doctors = doctors.toMutableList(),
             reports = emptyList()
         )
         return patientRepository.save(patient)
