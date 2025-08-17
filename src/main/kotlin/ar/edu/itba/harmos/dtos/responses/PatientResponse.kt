@@ -5,7 +5,8 @@ import ar.edu.itba.harmos.models.PatientStatus
 
 data class PatientResponse(
     val id: Long,
-    val name: String,
+    val firstName: String,
+    val lastName: String,
     val phone: String,
     val status: PatientStatus,
     val doctors: List<AppUserResponse>,
@@ -15,7 +16,8 @@ data class PatientResponse(
         fun singleFromModel(patient: Patient): PatientResponse {
             return PatientResponse(
                 patient.id,
-                patient.name,
+                patient.firstName,
+                patient.lastName,
                 patient.phone,
                 patient.status,
                 patient.doctors.map { AppUserResponse.singleFromModel(it) },

@@ -5,7 +5,8 @@ import javax.persistence.*
 @Entity
 @Table(name = "Patients")
 class Patient(
-    var name: String,
+    var firstName: String,
+    var lastName: String,
     var phone: String,
 
     @Enumerated(EnumType.STRING)
@@ -26,7 +27,7 @@ class Patient(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
-    constructor() : this("", "", PatientStatus.PENDING, mutableListOf(), emptyList())
+    constructor() : this("", "", "", PatientStatus.PENDING, mutableListOf(), emptyList())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

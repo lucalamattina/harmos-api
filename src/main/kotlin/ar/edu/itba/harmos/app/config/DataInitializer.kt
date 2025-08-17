@@ -232,7 +232,8 @@ class DataInitializer(
         val patients =
                 (1..50).map { _ ->
                     Patient(
-                            name = "${getRandomFirstName()} ${getRandomLastName()}",
+                            firstName = getRandomFirstName(),
+                            lastName = getRandomLastName(),
                             phone = "1234567890",
                             status = PatientStatus.ACTIVE,
                             doctors = mutableListOf(),

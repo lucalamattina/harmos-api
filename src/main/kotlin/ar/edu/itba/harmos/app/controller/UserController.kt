@@ -93,10 +93,7 @@ class UserController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
     ): ResponseEntity<Page<AppUserResponse>> {
-        val specialtiesList = specialties?.mapNotNull { specialtyName ->
-            specialtyService.getSpecialtyByName(specialtyName)
-        }
-        val users = appUserService.findAppUsersByEmailAndSpecialties(email, name, specialtiesList, page, size)
+        val users = appUserService.findAppUsersByEmailAndSpecialties(email, name, specialties, page, size)
         return ResponseEntity.ok(users.map { AppUserResponse.singleFromModel(it) })
     }
 
