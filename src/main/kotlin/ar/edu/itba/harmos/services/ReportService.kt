@@ -54,9 +54,9 @@ class ReportService(
         // Notificar al dueño del reporte (el doctor que lo creó) solo si no es él mismo
         if (savedReport.doctor.id != doctor.id) {
             try {
-                val creatorName = doctor.name
+                val creatorName = "${doctor.firstName} ${doctor.lastName}"
                 val notification = Notification(
-                    message = "Se ha creado un nuevo reporte por $creatorName para tu paciente ${savedReport.patient.name}: ${savedReport.title}",
+                    message = "Se ha creado un nuevo reporte por $creatorName para tu paciente ${savedReport.patient.firstName} ${savedReport.patient.lastName}: ${savedReport.title}",
                     user = savedReport.doctor,
                     reportId = savedReport.id
                 )
@@ -154,9 +154,9 @@ class ReportService(
         // Notificar al dueño del reporte original (el doctor que lo creó) solo si no es él mismo
         if (savedReport.doctor.id != doctor.id) {
             try {
-                val editorName = doctor.name
+                val editorName = "${doctor.firstName} ${doctor.lastName}"
                 val notification = Notification(
-                    message = "Se ha modificado por $editorName tu reporte del paciente ${savedReport.patient.name}: ${savedReport.title}",
+                    message = "Se ha modificado por $editorName tu reporte del paciente ${savedReport.patient.firstName} ${savedReport.patient.lastName}: ${savedReport.title}",
                     user = savedReport.doctor,
                     reportId = savedReport.id
                 )
@@ -368,4 +368,4 @@ class ReportService(
         }
     }
 
-} 
+}

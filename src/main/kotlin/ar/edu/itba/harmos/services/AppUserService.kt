@@ -92,12 +92,12 @@ class AppUserService(
     fun findAppUsersByEmailAndSpecialties(
         email: String?,
         name: String?,
-        specialties: List<Specialty>?,
+        specialties: List<String>?,
         page: Int,
         size: Int
     ): Page<AppUser> {
         val pageable = PageRequest.of(page, size, Sort.by("lastName"))
-        val spec = Specification<AppUser> { root, query, criteriaBuilder ->
+        val spec = Specification<AppUser> { root, _, criteriaBuilder ->
             val predicates = mutableListOf<Predicate>()
 
             email?.let {
@@ -118,9 +118,10 @@ class AppUserService(
                 predicates.add(criteriaBuilder.and(*namePredicates.toTypedArray()))
             }
 
-            specialties?.let {
-                if (it.isNotEmpty()) {
-                    predicates.add(root.get<Set<Specialty>>("specialties").`in`(it))
+            specialties?.let { specialtyNames ->
+                if (specialtyNames.isNotEmpty()) {
+                    val specialtyJoin = root.join<AppUser, Specialty>("specialties")
+                    predicates.add(specialtyJoin.get<String>("name").`in`(specialtyNames))
                 }
             }
 

@@ -24,7 +24,7 @@ class SpecialtyService(
     }
 
     fun getSpecialtyByName(name: String): Specialty? {
-        return specialtyRepository.findByName(name)?: throw IllegalArgumentException("Specialty not found")
+        return specialtyRepository.findByName(name)
     }
 
     fun getSpecialtyById(id: Long): Specialty? {

@@ -87,7 +87,7 @@ class AsyncNotificationService(
                             announcementTitle = announcement.title,
                             announcementContent = announcement.content,
                             link = announcementLink,
-                            author = announcement.createdBy.name,
+                            author = "${announcement.createdBy.firstName} ${announcement.createdBy.lastName}",
                             date = announcement.date.toString(),
                             specialties = announcement.specialties.joinToString(", ") { it.name }
                         )
@@ -122,8 +122,8 @@ class AsyncNotificationService(
             if (owner.id != editor.id) {
                 val template = EmailTemplate.reportModified(
                     reportTitle = report.title,
-                    patientName = report.patient.name,
-                    editorName = editor.name,
+                    patientName = "${report.patient.firstName} ${report.patient.lastName}",
+                    editorName = "${editor.firstName} ${editor.lastName}",
                     link = reportLink
                 )
                 emailService.sendEmail(owner.email, template)
@@ -133,4 +133,4 @@ class AsyncNotificationService(
             logger.error("Error sending report modified email for report ${report.id}: ${e.message}", e)
         }
     }
-} 
+}

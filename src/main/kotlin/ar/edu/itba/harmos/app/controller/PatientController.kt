@@ -38,9 +38,7 @@ class PatientController(
     @ResponseBody
     fun create(@RequestBody createPatientRequest: CreatePatientRequest): ResponseEntity<Any> {
         val patient = patientService.createPatient(createPatientRequest)
-        return if (patient != null) {
-            ResponseEntity(PatientResponse.singleFromModel(patient), HttpStatus.CREATED)
-        } else ResponseEntity(HttpStatus.BAD_REQUEST)
+        return ResponseEntity(PatientResponse.singleFromModel(patient), HttpStatus.CREATED)
     }
 
     @GetMapping("/{id}")
@@ -67,34 +65,10 @@ class PatientController(
         @RequestParam(required = false) doctor: String?,
         @RequestParam(required = false) status: PatientStatus?,
         @RequestParam(required = false) specialty: String?,
+        @RequestParam(required = false) doctorId: Long?,
         pageable: Pageable
     ): ResponseEntity<Page<PatientResponse>> {
-        val patients = when {
-            !specialty.isNullOrEmpty() && !doctor.isNullOrEmpty() && !name.isNullOrEmpty() -> {
-                patientService.getPatientsByDoctorSpecialtyAndDoctorNameAndPatientName(specialty, doctor, name, pageable, status)
-            }
-            !specialty.isNullOrEmpty() && !doctor.isNullOrEmpty() -> {
-                patientService.getPatientsByDoctorSpecialtyAndDoctorName(specialty, doctor, pageable, status)
-            }
-            !specialty.isNullOrEmpty() && !name.isNullOrEmpty() -> {
-                patientService.getPatientsByDoctorSpecialtyAndName(specialty, name, pageable, status)
-            }
-            !specialty.isNullOrEmpty() -> {
-                patientService.getPatientsByDoctorSpecialty(specialty, pageable, status)
-            }
-            !doctor.isNullOrEmpty() && !name.isNullOrEmpty() -> {
-                patientService.getPatientsByDoctorAndName(doctor, name, pageable, status)
-            }
-            !doctor.isNullOrEmpty() -> {
-                patientService.getPatientsByDoctorName(doctor, pageable, status)
-            }
-            !name.isNullOrEmpty() -> {
-                patientService.getPatientsContainingName(name, pageable, status)
-            }
-            else -> {
-                patientService.getPatients(pageable, status)
-            }
-        }
+        val patients = patientService.getPatients(name, doctor, specialty, status, doctorId, pageable)
         return ResponseEntity.ok(patients.map { PatientResponse.singleFromModel(it) })
     }
 
@@ -103,12 +77,10 @@ class PatientController(
         val patient = patientService.getPatientById(patientId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
         val doctor = appUserService.getAppUserById(doctorId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
         
-        // Si el doctor ya está asignado, devolvemos NO_CONTENT
         if (patient.doctors.contains(doctor)) {
             return ResponseEntity(HttpStatus.NO_CONTENT)
         }
         
-        // Si no está asignado, intentamos agregarlo
         return if (patientService.addDoctorToPatient(patientId, doctorId)) {
             ResponseEntity(HttpStatus.NO_CONTENT)
         } else {
@@ -136,11 +108,9 @@ class PatientController(
             return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
         }
 
-        // Verificar que el paciente existe
         val patient = patientService.getPatientById(patientId)
             ?: return ResponseEntity(mapOf("error" to "Paciente no encontrado"), HttpStatus.NOT_FOUND)
 
-        // Verificar que el doctor tiene acceso al paciente
         if (!patient.doctors.contains(appUser)) {
             return ResponseEntity(mapOf("error" to "No tienes acceso a este paciente"), HttpStatus.FORBIDDEN)
         }
@@ -156,6 +126,4 @@ class PatientController(
             )
         }
     }
-
-
 }

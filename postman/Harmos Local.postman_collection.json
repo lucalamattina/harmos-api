@@ -26,12 +26,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"doctor@example.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phone\": \"1234567890\",\n    \"specialties\": [\"TO\"]\n}"
+							"raw": "{\n    "email\": \"doctor@example.com\",\n    "password\": \"password123\",\n    "firstName\": \"John\",\n    "lastName\": \"Doe\",\n    "phone\": \"1234567890\",\n    "specialties\": [\"TO\"]\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/users",
-							"host": ["{{base_url}}"],
-							"path": ["users"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users"
+							]
 						}
 					}
 				},
@@ -42,8 +46,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/1",
-							"host": ["{{base_url}}"],
-							"path": ["users", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
 						}
 					}
 				},
@@ -54,8 +63,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users?email=doctor@example.com&name=John&specialties=TO&page=0&size=10",
-							"host": ["{{base_url}}"],
-							"path": ["users"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users"
+							],
 							"query": [
 								{
 									"key": "email",
@@ -88,8 +101,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/1",
-							"host": ["{{base_url}}"],
-							"path": ["users", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
 						}
 					}
 				},
@@ -100,8 +118,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/1/specialties/1",
-							"host": ["{{base_url}}"],
-							"path": ["users", "1", "specialties", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"1",
+								"specialties",
+								"1"
+							]
 						}
 					}
 				},
@@ -112,8 +137,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/forgot-password?email=doctor@example.com",
-							"host": ["{{base_url}}"],
-							"path": ["users", "forgot-password"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"forgot-password"
+							],
 							"query": [
 								{
 									"key": "email",
@@ -130,8 +160,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/reset-password?token=your-reset-token&newPassword=newPassword123",
-							"host": ["{{base_url}}"],
-							"path": ["users", "reset-password"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"reset-password"
+							],
 							"query": [
 								{
 									"key": "token",
@@ -152,8 +187,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/1/announcements?page=0&offset=10",
-							"host": ["{{base_url}}"],
-							"path": ["users", "1", "announcements"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"1",
+								"announcements"
+							],
 							"query": [
 								{
 									"key": "page",
@@ -174,8 +215,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/1/schedules",
-							"host": ["{{base_url}}"],
-							"path": ["users", "1", "schedules"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"1",
+								"schedules"
+							]
 						}
 					}
 				},
@@ -186,8 +233,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/create-reset-token?email=doctor@example.com",
-							"host": ["{{base_url}}"],
-							"path": ["users", "create-reset-token"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"create-reset-token"
+							],
 							"query": [
 								{
 									"key": "email",
@@ -204,8 +256,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/users/validate-reset-token?token=your-reset-token",
-							"host": ["{{base_url}}"],
-							"path": ["users", "validate-reset-token"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"validate-reset-token"
+							],
 							"query": [
 								{
 									"key": "token",
@@ -237,12 +294,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Juan Pérez\",\n    \"phone\": \"1234567890\",\n    \"status\": \"ACTIVE\"\n}"
+							"raw": "{\n    "firstName\": \"Juan\",\n    "lastName\": \"Pérez\",\n    "phone\": \"1234567890\",\n    "status\": \"ACTIVE\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/patients",
-							"host": ["{{base_url}}"],
-							"path": ["patients"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"patients"
+							]
 						}
 					}
 				},
@@ -253,8 +314,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/patients/1",
-							"host": ["{{base_url}}"],
-							"path": ["patients", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"patients",
+								"1"
+							]
 						}
 					}
 				},
@@ -264,12 +330,16 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/patients?name=Juan&page=0&size=10",
-							"host": ["{{base_url}}"],
-							"path": ["patients"],
+							"raw": "{{base_url}}/patients?query=Juan&page=0&size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"patients"
+							],
 							"query": [
 								{
-									"key": "name",
+									"key": "query",
 									"value": "Juan"
 								},
 								{
@@ -291,8 +361,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/patients/1",
-							"host": ["{{base_url}}"],
-							"path": ["patients", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"patients",
+								"1"
+							]
 						}
 					}
 				},
@@ -303,8 +378,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/patients/1/doctors/1",
-							"host": ["{{base_url}}"],
-							"path": ["patients", "1", "doctors", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"patients",
+								"1",
+								"doctors",
+								"1"
+							]
 						}
 					}
 				}
@@ -325,12 +407,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"TO\",\n    \"data\": \"Terapia Ocupacional\"\n}"
+							"raw": "{\n    "name\": \"TO\",\n    "data\": \"Terapia Ocupacional\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/specialties",
-							"host": ["{{base_url}}"],
-							"path": ["specialties"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"specialties"
+							]
 						}
 					}
 				},
@@ -341,8 +427,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/specialties/1",
-							"host": ["{{base_url}}"],
-							"path": ["specialties", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"specialties",
+								"1"
+							]
 						}
 					}
 				},
@@ -353,8 +444,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/specialties/search?name=TO",
-							"host": ["{{base_url}}"],
-							"path": ["specialties", "search"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"specialties",
+								"search"
+							],
 							"query": [
 								{
 									"key": "name",
@@ -371,8 +467,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/specialties",
-							"host": ["{{base_url}}"],
-							"path": ["specialties"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"specialties"
+							]
 						}
 					}
 				},
@@ -383,8 +483,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/specialties/1",
-							"host": ["{{base_url}}"],
-							"path": ["specialties", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"specialties",
+								"1"
+							]
 						}
 					}
 				}
@@ -410,12 +515,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"locationId\": 1,\n    \"dayOfWeek\": \"MONDAY\",\n    \"hourFrom\": 9,\n    \"minuteFrom\": 0,\n    \"hourTo\": 10,\n    \"minuteTo\": 0,\n    \"doctorUserId\": 1,\n    \"patientId\": 1\n}"
+							"raw": "{\n    "locationId\": 1,\n    "dayOfWeek\": \"MONDAY\",\n    "hourFrom\": 9,\n    "minuteFrom\": 0,\n    "hourTo\": 10,\n    "minuteTo\": 0,\n    "doctorUserId\": 1,\n    "patientId\": 1\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/schedules",
-							"host": ["{{base_url}}"],
-							"path": ["schedules"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"schedules"
+							]
 						}
 					}
 				},
@@ -478,12 +587,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"Nuevo Anuncio\",\n    \"content\": \"Contenido del anuncio\",\n    \"date\": \"2024-03-20T10:00:00\",\n    \"createdByUserId\": 1,\n    \"specialties\": [\"TO\"]\n}"
+							"raw": "{\n    "title\": \"Nuevo Anuncio\",\n    "content\": \"Contenido del anuncio\",\n    "date\": \"2024-03-20T10:00:00\",\n    "createdByUserId\": 1,\n    "specialties\": [\"TO\"]\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/announcements",
-							"host": ["{{base_url}}"],
-							"path": ["announcements"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"announcements"
+							]
 						}
 					}
 				},
@@ -494,8 +607,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/announcements?page=0&size=10&specialties=TO",
-							"host": ["{{base_url}}"],
-							"path": ["announcements"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"announcements"
+							],
 							"query": [
 								{
 									"key": "page",
@@ -520,8 +637,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/announcements/1",
-							"host": ["{{base_url}}"],
-							"path": ["announcements", "1"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"announcements",
+								"1"
+							]
 						}
 					}
 				}
@@ -542,12 +664,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"doctor@example.com\",\n    \"password\": \"password123\"\n}"
+							"raw": "{\n    "email\": \"doctor@example.com\",\n    "password\": \"password123\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/authenticate",
-							"host": ["{{base_url}}"],
-							"path": ["authenticate"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"authenticate"
+							]
 						}
 					}
 				}
@@ -569,8 +695,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/notifications?unreadOnly=false",
-							"host": ["{{base_url}}"],
-							"path": ["notifications"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications"
+							],
 							"query": [
 								{
 									"key": "unreadOnly",
@@ -595,8 +725,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/notifications/1/read",
-							"host": ["{{base_url}}"],
-							"path": ["notifications", "1", "read"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								"1",
+								"read"
+							]
 						},
 						"description": "Mark a notification as read"
 					}
@@ -619,12 +755,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"message\": \"Test notification\",\n    \"user\": {\n        \"id\": 1\n    },\n    \"announcementId\": null\n}"
+							"raw": "{\n    "message\": \"Test notification\",\n    "user\": {\n        "id\": 1\n    },\n    "announcementId\": null\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/notifications",
-							"host": ["{{base_url}}"],
-							"path": ["notifications"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications"
+							]
 						},
 						"description": "Create a new notification"
 					}
@@ -651,7 +791,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Consultorio Principal\"\n}"
+							"raw": "{\n    "name\": \"Consultorio Principal\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/locations",
@@ -753,4 +893,4 @@
 			"value": "http://localhost:8080/api"
 		}
 	]
-} 
+}
