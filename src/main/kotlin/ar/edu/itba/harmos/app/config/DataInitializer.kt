@@ -19,7 +19,6 @@ class DataInitializer(
         private val specialtyRepository: SpecialtyRepository,
         private val patientRepository: PatientRepository,
         private val scheduleRepository: ScheduleRepository,
-        private val locationRepository: LocationRepository,
         private val announcementRepository: AnnouncementRepository,
         private val notificationRepository: NotificationRepository,
         private val passwordResetTokenRepository: PasswordResetTokenRepository,
@@ -37,7 +36,6 @@ class DataInitializer(
                 initializeRoles()
                 initializeSpecialties()
                 initializeUsers()
-                initializeLocations()
                 initializePatients()
                 initializeSchedules()
                 initializeAnnouncements()
@@ -54,7 +52,6 @@ class DataInitializer(
         announcementRepository.deleteAll()
         patientRepository.deleteAll()
         appUserRepository.deleteAll()
-        locationRepository.deleteAll()
         specialtyRepository.deleteAll()
         roleRepository.deleteAll()
     }
@@ -216,18 +213,6 @@ class DataInitializer(
         appUserRepository.saveAll(doctors + users + admin)
     }
 
-    private fun initializeLocations() {
-        val locations =
-                listOf(
-                        Location(name = "Consultorio 1"),
-                        Location(name = "Consultorio 2"),
-                        Location(name = "Consultorio 3"),
-                        Location(name = "Sala de Terapia Grupal"),
-                        Location(name = "Oficina Administrativa")
-                )
-        locationRepository.saveAll(locations)
-    }
-
     private fun initializePatients() {
         val patients =
                 (1..50).map { _ ->
@@ -255,10 +240,9 @@ class DataInitializer(
     private fun initializeSchedules() {
         val doctors = appUserRepository.findAll().toList()
         val patients = patientRepository.findAll().toList()
-        val locations = locationRepository.findAll().toList()
         val daysOfWeek = DayOfWeek.values()
 
-        if (doctors.isEmpty() || patients.isEmpty() || locations.isEmpty()) {
+        if (doctors.isEmpty() || patients.isEmpty()) {
             println("Not enough doctors, patients, or locations to create schedules.")
             return
         }
@@ -269,7 +253,6 @@ class DataInitializer(
         for (i in 0 until numberOfSchedules) {
             val randomDoctor = doctors.random()
             val randomPatient = patients.random()
-            val randomLocation = locations.random()
             val randomDay = daysOfWeek.random()
             val hourFrom = Random.nextInt(9, 17)
             val minuteFrom = listOf(0, 15, 30, 45).random()
@@ -277,7 +260,6 @@ class DataInitializer(
             val minuteTo = minuteFrom
 
             Schedule(
-                            location = randomLocation,
                             dayOfWeek = randomDay,
                             hourFrom = hourFrom,
                             minuteFrom = minuteFrom,

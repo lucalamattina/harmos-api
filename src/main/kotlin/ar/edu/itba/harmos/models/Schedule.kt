@@ -6,9 +6,6 @@ import javax.persistence.*
 @Entity
 @Table(name = "schedule")
 class Schedule(
-        @ManyToOne(fetch = FetchType.EAGER, optional = false)
-        @JoinColumn(name = "location_id", nullable = false)
-        val location: Location,
         val dayOfWeek: DayOfWeek,
         val hourFrom: Int,
         val minuteFrom: Int,
@@ -22,7 +19,7 @@ class Schedule(
         val patient: Patient,
         @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long = -1
 ) {
-    protected constructor() : this(Location(), DayOfWeek.MONDAY, 0, 0, 0, 0, AppUser(), Patient())
+    protected constructor() : this(DayOfWeek.MONDAY, 0, 0, 0, 0, AppUser(), Patient())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

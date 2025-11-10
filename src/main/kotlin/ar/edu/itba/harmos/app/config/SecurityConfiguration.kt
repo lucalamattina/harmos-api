@@ -71,9 +71,6 @@ class SecurityConfiguration(
             .antMatchers(HttpMethod.DELETE, "/users/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.PUT, "/users/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.POST, "/specialties").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
-            .antMatchers(HttpMethod.POST, "/locations").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
-            .antMatchers(HttpMethod.DELETE, "/locations/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
-            .antMatchers(HttpMethod.PUT, "/locations/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.POST, "/schedules").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.DELETE, "/schedules/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             // Restringir la asignación de doctores a pacientes solo a administradores

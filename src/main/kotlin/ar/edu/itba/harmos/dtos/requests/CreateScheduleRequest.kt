@@ -3,7 +3,6 @@ package ar.edu.itba.harmos.dtos.requests
 import java.time.DayOfWeek
 
 data class CreateScheduleRequest(
-        val locationId: Long,
         val dayOfWeek: DayOfWeek,
         val hourFrom: Int,
         val minuteFrom: Int,

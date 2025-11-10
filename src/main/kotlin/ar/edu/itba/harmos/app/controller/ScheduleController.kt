@@ -3,7 +3,6 @@ package ar.edu.itba.harmos.app.controller
 import ar.edu.itba.harmos.dtos.requests.CreateScheduleRequest
 import ar.edu.itba.harmos.dtos.responses.ScheduleResponse
 import ar.edu.itba.harmos.services.AppUserService
-import ar.edu.itba.harmos.services.LocationService
 import ar.edu.itba.harmos.services.PatientService
 import ar.edu.itba.harmos.services.ScheduleService
 import org.springframework.http.HttpStatus
@@ -17,8 +16,7 @@ import org.springframework.web.bind.annotation.*
 class ScheduleController(
         private val appUserService: AppUserService,
         private val scheduleService: ScheduleService,
-        private val patientService: PatientService,
-        private val locationService: LocationService
+        private val patientService: PatientService
 ) {
         @PostMapping()
         @ResponseBody
@@ -35,19 +33,12 @@ class ScheduleController(
                                         mapOf("error" to "Patient not found"),
                                         HttpStatus.NOT_FOUND
                                 )
-                val location =
-                        locationService.getLocationById(createScheduleRequest.locationId)
-                                ?: return ResponseEntity(
-                                        mapOf("error" to "Location not found"),
-                                        HttpStatus.NOT_FOUND
-                                )
 
                 val schedule =
                         scheduleService.createSchedule(
                                 createScheduleRequest,
                                 appUser,
-                                patient,
-                                location
+                                patient
                         )
                 return ResponseEntity(
                         ScheduleResponse.singleFromModel(schedule),
@@ -58,13 +49,12 @@ class ScheduleController(
         @GetMapping()
         @ResponseBody
         fun findAll(
-                @RequestParam(name = "locationId", required = false) locationId: Long?,
                 @RequestParam(name = "doctorId", required = false) doctorId: Long?,
                 @RequestParam(name = "patientId", required = false) patientId: Long?
         ): ResponseEntity<Any> {
 
                 val schedules =
-                        scheduleService.findFilteredSchedules(locationId, doctorId, patientId)
+                        scheduleService.findFilteredSchedules(doctorId, patientId)
                 return ResponseEntity(ScheduleResponse.setFromModel(schedules), HttpStatus.OK)
         }
 
