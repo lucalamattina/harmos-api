@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,6 +25,7 @@ class DataInitializer(
         private val passwordResetTokenRepository: PasswordResetTokenRepository,
         private val reportRepository: ReportRepository,
         private val passwordEncoder: PasswordEncoder,
+        private val jdbcTemplate: JdbcTemplate,
         @Value("\${app.database.repopulate:false}") private val repopulateDatabase: Boolean
 ) {
 
@@ -243,11 +245,12 @@ class DataInitializer(
         val daysOfWeek = DayOfWeek.values()
 
         if (doctors.isEmpty() || patients.isEmpty()) {
-            println("Not enough doctors, patients, or locations to create schedules.")
+            println("Not enough doctors or patients to create schedules.")
             return
         }
 
-        val schedulesToCreate = mutableListOf<Schedule>()
+        // location_id es NOT NULL en BD y no está en la entidad Schedule; se inserta por JDBC.
+        val locationId = ensureSeedLocationId()
         val numberOfSchedules = 20
 
         for (i in 0 until numberOfSchedules) {
@@ -259,19 +262,72 @@ class DataInitializer(
             val hourTo = hourFrom + 1
             val minuteTo = minuteFrom
 
-            Schedule(
-                            dayOfWeek = randomDay,
-                            hourFrom = hourFrom,
-                            minuteFrom = minuteFrom,
-                            hourTo = hourTo,
-                            minuteTo = minuteTo,
-                            doctor = randomDoctor,
-                            patient = randomPatient
-                    )
-                    .also { schedulesToCreate.add(it) }
+            jdbcTemplate.update(
+                    """
+                    INSERT INTO schedule (day_of_week, doctor_user_id, hour_from, hour_to, minute_from, minute_to, patient_id, location_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """
+                            .trimIndent(),
+                    randomDay.ordinal,
+                    randomDoctor.id,
+                    hourFrom,
+                    hourTo,
+                    minuteFrom,
+                    minuteTo,
+                    randomPatient.id,
+                    locationId
+            )
         }
+    }
 
-        scheduleRepository.saveAll(schedulesToCreate)
+    private fun ensureSeedLocationId(): Long {
+        for (table in listOf("locations", "location")) {
+            if (!postgresTableExists(table)) continue
+            val existing =
+                    jdbcTemplate.queryForList(
+                            "SELECT id FROM $table LIMIT 1",
+                            Long::class.java
+                    )
+            if (existing.isNotEmpty()) {
+                return existing.first()
+            }
+            jdbcTemplate.update(
+                    "INSERT INTO $table (name) VALUES (?)",
+                    "Consultorio Central"
+            )
+            return jdbcTemplate.queryForObject(
+                    "SELECT id FROM $table ORDER BY id DESC LIMIT 1",
+                    Long::class.java
+            )!!
+        }
+        jdbcTemplate.execute(
+                """
+                CREATE TABLE IF NOT EXISTS location (
+                    id bigserial PRIMARY KEY,
+                    name varchar(255) NOT NULL
+                )
+                """.trimIndent()
+        )
+        jdbcTemplate.update("INSERT INTO location (name) VALUES (?)", "Consultorio Central")
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM location ORDER BY id DESC LIMIT 1",
+                Long::class.java
+        )!!
+    }
+
+    private fun postgresTableExists(tableName: String): Boolean {
+        val count =
+                jdbcTemplate.queryForObject(
+                        """
+                        SELECT COUNT(*) FROM information_schema.tables
+                        WHERE table_schema = current_schema() AND lower(table_name) = lower(?)
+                        """
+                                .trimIndent(),
+                        Int::class.java,
+                        tableName
+                )
+                        ?: 0
+        return count > 0
     }
 
     private fun initializeAnnouncements() {
