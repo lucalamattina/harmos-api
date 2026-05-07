@@ -87,8 +87,8 @@ class PatientService(
                 }
 
                 specialty?.let {
-                    val specialtiesJoin: Join<AppUser, Specialty> = doctorsJoin.join("specialties")
-                    predicates.add(criteriaBuilder.equal(specialtiesJoin.get<String>("name"), it))
+                    val specialtyJoin: Join<AppUser, Specialty> = doctorsJoin.join("specialty")
+                    predicates.add(criteriaBuilder.equal(specialtyJoin.get<String>("name"), it))
                 }
 
                 doctorId?.let {

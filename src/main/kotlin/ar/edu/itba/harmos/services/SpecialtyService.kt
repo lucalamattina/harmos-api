@@ -47,8 +47,9 @@ class SpecialtyService(
         val specialty = specialtyOpt.get()
         // Remover de usuarios
         appUserRepository.findAll().forEach { user ->
-            if (user.specialties.remove(specialty)) {
-                appUserRepository.save(user)                                                                                                                                                                                                                                                                                                            
+            if (user.specialty == specialty) {
+                user.specialty = null
+                appUserRepository.save(user)
             }
         }
         // Remover de anuncios

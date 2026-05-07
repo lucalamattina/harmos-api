@@ -36,7 +36,7 @@ class ReportService(
             }
 
             // Verificar que el doctor tenga la especialidad
-            if (!doctor.specialties.contains(specialty)) {
+            if (doctor.specialty != specialty) {
                 throw IllegalAccessException("El doctor no tiene esta especialidad")
             }
         }
@@ -96,7 +96,7 @@ class ReportService(
                 ?: throw IllegalArgumentException("Especialidad no encontrada")
             
             // Verificar que el doctor tenga la especialidad (solo si no es admin)
-            if (!isAdmin(doctor) && !doctor.specialties.contains(newSpecialty)) {
+            if (!isAdmin(doctor) && doctor.specialty != newSpecialty) {
                 throw IllegalAccessException("El doctor no tiene esta especialidad")
             }
             newSpecialty
