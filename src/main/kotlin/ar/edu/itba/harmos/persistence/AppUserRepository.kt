@@ -14,14 +14,11 @@ import org.springframework.stereotype.Repository
 interface AppUserRepository : PagingAndSortingRepository<AppUser, Long>, JpaSpecificationExecutor<AppUser> {
 
     @Query("""
-        SELECT u FROM AppUser u 
+        SELECT u FROM AppUser u
         WHERE (:email IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%')))
-        AND (:name IS NULL OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :name, '%')) 
+        AND (:name IS NULL OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :name, '%'))
             OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :name, '%')))
-        AND (:specialties IS NULL OR EXISTS (
-            SELECT 1 FROM u.specialties s 
-            WHERE s IN :specialties
-        ))
+        AND (:specialties IS NULL OR u.specialty IN :specialties)
     """)
     fun findAppUsersByEmailAndSpecialties(
         @Param("email") email: String?,
@@ -36,14 +33,8 @@ interface AppUserRepository : PagingAndSortingRepository<AppUser, Long>, JpaSpec
     fun findByEmail(@Param("email") email: String): AppUser?
 
     @Query("""
-        SELECT DISTINCT u FROM AppUser u 
-        WHERE EXISTS (
-            SELECT 1 FROM u.specialties s 
-            WHERE s IN :specialties
-        )
+        SELECT DISTINCT u FROM AppUser u WHERE u.specialty IN :specialties
     """)
-    fun findBySpecialtiesIn(@Param("specialties") specialties: List<Specialty>, pageable: Pageable): List<AppUser>
-
-    fun findBySpecialtiesInAndIdOrEmail(specialties: List<String>, id: Long?, email: String?): List<AppUser>
+    fun findBySpecialtyIn(@Param("specialties") specialties: List<Specialty>, pageable: Pageable): List<AppUser>
 
 }

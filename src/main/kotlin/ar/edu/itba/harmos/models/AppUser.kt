@@ -11,16 +11,12 @@ class AppUser (
     var lastName: String,
     var phone: String,
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "user_specialty",
-        joinColumns = [JoinColumn(name = "user_id")],
-        inverseJoinColumns = [JoinColumn(name = "specialty_id")]
-    )
-    val specialties: MutableSet<Specialty>,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "specialty_id")
+    var specialty: Specialty? = null,
 
     @ManyToMany(fetch = FetchType.EAGER)
-    val roles: MutableSet<Role>,
+    val roles: MutableSet<Role> = mutableSetOf(),
 
     @OneToMany(mappedBy = "createdBy", cascade = [CascadeType.REMOVE], orphanRemoval = true)
     val announcements: List<Announcement> = mutableListOf(),
@@ -32,7 +28,7 @@ class AppUser (
     val name: String
         get() = "$firstName $lastName"
 
-    constructor() : this("","","","","", mutableSetOf(), mutableSetOf())
+    constructor() : this("", "", "", "", "")
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

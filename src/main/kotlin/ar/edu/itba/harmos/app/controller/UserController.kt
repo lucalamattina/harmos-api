@@ -40,10 +40,12 @@ class UserController(
     @PostMapping()
     @ResponseBody
     fun create(@RequestBody createAppUserRequest: CreateAppUserRequest): ResponseEntity<Any> {
-        val appUser = appUserService.createUser(createAppUserRequest)
-        return if (appUser != null) {
+        return try {
+            val appUser = appUserService.createUser(createAppUserRequest)
             ResponseEntity(AppUserResponse.singleFromModel(appUser), HttpStatus.CREATED)
-        } else ResponseEntity(HttpStatus.BAD_REQUEST)
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity(mapOf("error" to e.message), HttpStatus.BAD_REQUEST)
+        }
     }
 
     @PutMapping("/{id}")
@@ -120,12 +122,6 @@ class UserController(
 
     @PostMapping("/forgot-password")
     fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<ForgotPasswordResponse> {
-        println("=== FORGOT PASSWORD REQUEST ===")
-        println("Received email: '${forgotPasswordRequest.email}'")
-        println("Email length: ${forgotPasswordRequest.email.length}")
-        println("Email trimmed: '${forgotPasswordRequest.email.trim()}'")
-        
-        // Validar el DTO
         if (!forgotPasswordRequest.isValid()) {
             val error = forgotPasswordRequest.getValidationError() ?: "Datos inválidos"
             println("Validation failed: $error")

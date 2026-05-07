@@ -16,13 +16,22 @@ class ScheduleService(private val scheduleRepository: ScheduleRepository) {
             doctor: AppUser,
             patient: Patient
     ): Schedule {
+        val totalMinutesTo: Int = if (createScheduleRequest.durationMinutes != null) {
+            createScheduleRequest.hourFrom * 60 + createScheduleRequest.minuteFrom + createScheduleRequest.durationMinutes
+        } else {
+            val hourTo = createScheduleRequest.hourTo
+                    ?: throw IllegalArgumentException("Se requiere durationMinutes o hourTo/minuteTo")
+            val minuteTo = createScheduleRequest.minuteTo
+                    ?: throw IllegalArgumentException("Se requiere durationMinutes o hourTo/minuteTo")
+            hourTo * 60 + minuteTo
+        }
         val schedule =
                 Schedule(
                         createScheduleRequest.dayOfWeek,
                         createScheduleRequest.hourFrom,
                         createScheduleRequest.minuteFrom,
-                        createScheduleRequest.hourTo,
-                        createScheduleRequest.minuteTo,
+                        totalMinutesTo / 60,
+                        totalMinutesTo % 60,
                         doctor,
                         patient
                 )

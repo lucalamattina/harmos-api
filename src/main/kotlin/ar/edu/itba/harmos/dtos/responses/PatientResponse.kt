@@ -21,7 +21,7 @@ data class PatientResponse(
                 patient.phone,
                 patient.status,
                 patient.doctors.map { AppUserResponse.singleFromModel(it) },
-                patient.doctors.flatMap { it.specialties }.map { it.name }.toSet()
+                patient.doctors.mapNotNull { it.specialty?.name }.toSet()
             )
         }
     }

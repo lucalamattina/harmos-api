@@ -67,3 +67,7 @@ kapt/
 
 #env files
 .env*
+
+# AI-generated docs
+.planning/
+FRONTEND_CHANGES.md

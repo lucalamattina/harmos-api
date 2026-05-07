@@ -34,20 +34,15 @@ class AppUserService(
     @Value("\${app.frontend.url}") private val frontendUrl: String
 ) {
 
-    fun createUser(createAppUserRequest: CreateAppUserRequest): AppUser? {
+    fun createUser(createAppUserRequest: CreateAppUserRequest): AppUser {
         if (appUserRepository.findByEmail(createAppUserRequest.email) != null) {
-            return null //TODO: dar feedback que el user existe
+            throw IllegalArgumentException("El email ya se encuentra registrado")
         }
-        val resolvedSpecialties: MutableSet<Specialty> = if (createAppUserRequest.specialties.isNullOrEmpty()) {
-            mutableSetOf()
+        val resolvedSpecialty: Specialty? = if (createAppUserRequest.specialty.isNullOrEmpty()) {
+            null
         } else {
-            try {
-                createAppUserRequest.specialties!!.map { specialtyName ->
-                    specialtyService.getSpecialtyByName(specialtyName)!!
-                }.toMutableSet()
-            } catch (e: IllegalArgumentException) {
-                return null
-            }
+            specialtyService.getSpecialtyByName(createAppUserRequest.specialty)
+                ?: throw IllegalArgumentException("La especialidad '${createAppUserRequest.specialty}' no existe")
         }
 
         val rolesList = createAppUserRequest.roles ?: emptyList()
@@ -67,7 +62,7 @@ class AppUserService(
             createAppUserRequest.firstName,
             createAppUserRequest.lastName,
             createAppUserRequest.phone,
-            resolvedSpecialties,
+            resolvedSpecialty,
             roles
         )
         return appUserRepository.save(applicationUser)
@@ -86,7 +81,7 @@ class AppUserService(
     }
 
     fun findUsersBySpecialties(specialties: List<Specialty>, page: Int, size: Int): List<AppUser> {
-        return appUserRepository.findBySpecialtiesIn(specialties, PageRequest.of(page, size))
+        return appUserRepository.findBySpecialtyIn(specialties, PageRequest.of(page, size))
     }
 
     fun findAppUsersByEmailAndSpecialties(
@@ -120,7 +115,7 @@ class AppUserService(
 
             specialties?.let { specialtyNames ->
                 if (specialtyNames.isNotEmpty()) {
-                    val specialtyJoin = root.join<AppUser, Specialty>("specialties")
+                    val specialtyJoin = root.join<AppUser, Specialty>("specialty")
                     predicates.add(specialtyJoin.get<String>("name").`in`(specialtyNames))
                 }
             }
@@ -144,7 +139,7 @@ class AppUserService(
         val user = appUserRepository.findById(userId).orElse(null) ?: return false
         val specialty = specialtyService.getSpecialtyById(specialtyId) ?: return false
 
-        user.specialties.add(specialty)
+        user.specialty = specialty
         appUserRepository.save(user)
         return true
     }
@@ -215,17 +210,13 @@ class AppUserService(
         editAppUserRequest.lastName?.let { user.lastName = it.trim() }
         editAppUserRequest.phone?.let { user.phone = it.trim() }
 
-        // Update specialties if provided
-        editAppUserRequest.specialties?.let { specialtyNames ->
-            val resolvedSpecialties = try {
-                specialtyNames.mapNotNull { specialtyName ->
-                    specialtyService.getSpecialtyByName(specialtyName.trim())
-                }.toMutableSet()
-            } catch (e: Exception) {
-                return null
+        // Update specialty if provided (empty string clears it)
+        editAppUserRequest.specialty?.let { specialtyName ->
+            user.specialty = if (specialtyName.isBlank()) {
+                null
+            } else {
+                specialtyService.getSpecialtyByName(specialtyName.trim()) ?: return null
             }
-            user.specialties.clear()
-            user.specialties.addAll(resolvedSpecialties)
         }
 
         // Update roles if provided

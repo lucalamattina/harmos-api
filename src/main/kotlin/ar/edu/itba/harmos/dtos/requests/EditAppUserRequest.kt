@@ -4,6 +4,6 @@ data class EditAppUserRequest(
     val firstName: String?,
     val lastName: String?,
     val phone: String?,
-    val specialties: List<String>? = null,
+    val specialty: String? = null,
     val roles: List<String>? = null
 ) 

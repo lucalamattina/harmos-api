@@ -9,7 +9,7 @@ data class AppUserResponse (
     val email: String,
     val name: String,
     val phone: String,
-    val specialties: List<String>,
+    val specialty: String?,
     val roles: List<String>
 ) {
     companion object {
@@ -19,7 +19,7 @@ data class AppUserResponse (
                 appUser.email,
                 appUser.name,
                 appUser.phone,
-                appUser.specialties.map { it.name }.toList(),
+                appUser.specialty?.name,
                 appUser.roles.map { it.role }.toList()
             )
         }
