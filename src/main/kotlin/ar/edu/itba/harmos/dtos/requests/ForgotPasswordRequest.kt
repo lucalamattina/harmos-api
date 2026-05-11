@@ -1,6 +1,11 @@
 package ar.edu.itba.harmos.dtos.requests
 
+import javax.validation.constraints.Email
+import javax.validation.constraints.NotBlank
+
 data class ForgotPasswordRequest(
+    @field:NotBlank(message = "Email is required")
+    @field:Email(message = "Email must be a valid email address")
     val email: String = ""
 ) {
     fun isValid(): Boolean {
@@ -26,4 +31,4 @@ data class ForgotPasswordRequest(
         val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
         return emailRegex.matches(email)
     }
-} 
+}

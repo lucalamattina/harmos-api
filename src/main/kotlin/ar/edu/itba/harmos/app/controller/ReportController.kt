@@ -4,13 +4,10 @@ import ar.edu.itba.harmos.dtos.requests.CreateReportRequest
 import ar.edu.itba.harmos.dtos.requests.EditReportRequest
 import ar.edu.itba.harmos.dtos.responses.ReportResponse
 import ar.edu.itba.harmos.models.AppUser
-import ar.edu.itba.harmos.models.AppUserRole
 import ar.edu.itba.harmos.security.annotations.CurrentUser
 import ar.edu.itba.harmos.services.CloudinaryService
 import ar.edu.itba.harmos.services.ReportService
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -24,12 +21,7 @@ class ReportController(
     private val reportService: ReportService,
     private val cloudinaryService: CloudinaryService
 ) {
-    /**
-     * Check if the user has administrator role
-     */
-    private fun isAdmin(user: AppUser): Boolean {
-        return user.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
-    }
+    private val logger = LoggerFactory.getLogger(ReportController::class.java)
 
     @PostMapping(consumes = ["multipart/form-data"])
     @ResponseBody
@@ -131,7 +123,7 @@ class ReportController(
         } catch (e: IllegalAccessException) {
             ResponseEntity(mapOf("error" to e.message), HttpStatus.FORBIDDEN)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error("Error creating report", e)
             ResponseEntity(mapOf("error" to "Error interno del servidor. Inténtelo de nuevo más tarde"), HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
@@ -180,24 +172,25 @@ class ReportController(
         }
 
         return try {
-            val pageable = PageRequest.of(page, size)
-            val reportsPage = reportService.getReportsForDoctorPaginated(appUser, patientId, specialtyId, doctorId, title, pageable)
-            
+            val reportsPage = reportService.getReportsForDoctorPaginated(
+                appUser, patientId, specialtyId, doctorId, title, page, size, sortBy, sortDirection
+            )
+
             if (reportsPage.isEmpty) {
                 val filters = mutableListOf<String>()
                 patientId?.let { filters.add("paciente") }
                 specialtyId?.let { filters.add("especialidad") }
                 doctorId?.let { filters.add("doctor") }
                 if (!title.isNullOrBlank()) filters.add("título")
-                
+
                 val message = if (filters.isNotEmpty()) {
                     "No se encontraron reportes para los filtros especificados: ${filters.joinToString(", ")}"
                 } else {
                     "No se encontraron reportes"
                 }
-                
+
                 return ResponseEntity(mapOf(
-                    "message" to message, 
+                    "message" to message,
                     "reports" to emptyList<Any>(),
                     "totalElements" to 0,
                     "totalPages" to 0,
@@ -211,10 +204,10 @@ class ReportController(
                     )
                 ), HttpStatus.OK)
             }
-            
+
             val response = ReportResponse.listFromModel(reportsPage.content, cloudinaryService)
             ResponseEntity.ok(mapOf(
-                "reports" to response, 
+                "reports" to response,
                 "totalElements" to reportsPage.totalElements,
                 "totalPages" to reportsPage.totalPages,
                 "currentPage" to reportsPage.number,
@@ -231,7 +224,7 @@ class ReportController(
         } catch (e: IllegalArgumentException) {
             ResponseEntity(mapOf("error" to "Parámetros inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error("Error fetching reports for doctor", e)
             ResponseEntity(
                 mapOf("error" to "Error al obtener reportes. Inténtelo de nuevo más tarde"),
                 HttpStatus.INTERNAL_SERVER_ERROR
@@ -260,7 +253,7 @@ class ReportController(
                 ?: return ResponseEntity(mapOf("error" to "Reporte no encontrado"), HttpStatus.NOT_FOUND)
 
             // Verificar que el usuario tiene acceso al reporte
-            if (!isAdmin(appUser) && report.doctor.id != appUser.id && !report.patient.doctors.contains(appUser)) {
+            if (!reportService.isAdmin(appUser) && report.doctor.id != appUser.id && !report.patient.doctors.contains(appUser)) {
                 return ResponseEntity(mapOf("error" to "No tienes acceso a este reporte"), HttpStatus.FORBIDDEN)
             }
 
@@ -268,7 +261,7 @@ class ReportController(
         } catch (e: IllegalArgumentException) {
             ResponseEntity(mapOf("error" to "ID inválido: ${e.message}"), HttpStatus.BAD_REQUEST)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error("Error fetching report by id", e)
             ResponseEntity(
                 mapOf("error" to "Error al obtener el reporte. Inténtelo de nuevo más tarde"),
                 HttpStatus.INTERNAL_SERVER_ERROR
@@ -301,7 +294,7 @@ class ReportController(
             ?: return ResponseEntity(mapOf("error" to "Reporte no encontrado"), HttpStatus.NOT_FOUND)
 
         // Verificar que el usuario tiene permisos para editar el reporte
-        if (!isAdmin(appUser) && existingReport.doctor.id != appUser.id) {
+        if (!reportService.isAdmin(appUser) && existingReport.doctor.id != appUser.id) {
             return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte o un administrador puede editarlo"), HttpStatus.FORBIDDEN)
         }
 
@@ -392,7 +385,7 @@ class ReportController(
         } catch (e: RuntimeException) {
             ResponseEntity(mapOf("error" to e.message), HttpStatus.INTERNAL_SERVER_ERROR)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error("Error updating report", e)
             ResponseEntity(mapOf("error" to "Error interno del servidor. Inténtelo de nuevo más tarde"), HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
@@ -420,7 +413,7 @@ class ReportController(
             }
 
             // Verificar que el usuario tiene permisos para eliminar el reporte
-            if (!isAdmin(appUser) && existingReport.doctor.id != appUser.id) {
+            if (!reportService.isAdmin(appUser) && existingReport.doctor.id != appUser.id) {
                 return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte o un administrador puede eliminarlo"), HttpStatus.FORBIDDEN)
             }
 
@@ -435,7 +428,7 @@ class ReportController(
         } catch (e: IllegalAccessException) {
             ResponseEntity(mapOf("error" to e.message), HttpStatus.FORBIDDEN)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error("Error deleting report", e)
             ResponseEntity(
                 mapOf("error" to "Error al eliminar el reporte. Inténtelo de nuevo más tarde"),
                 HttpStatus.INTERNAL_SERVER_ERROR
@@ -465,7 +458,7 @@ class ReportController(
                 ?: return ResponseEntity(mapOf("error" to "Reporte no encontrado"), HttpStatus.NOT_FOUND)
 
             // Verificar que el usuario tiene acceso al reporte
-            if (!isAdmin(appUser) && report.doctor.id != appUser.id && !report.patient.doctors.contains(appUser)) {
+            if (!reportService.isAdmin(appUser) && report.doctor.id != appUser.id && !report.patient.doctors.contains(appUser)) {
                 return ResponseEntity(mapOf("error" to "No tienes acceso a este reporte"), HttpStatus.FORBIDDEN)
             }
 
@@ -498,7 +491,7 @@ class ReportController(
         } catch (e: IllegalArgumentException) {
             ResponseEntity(mapOf("error" to "ID inválido: ${e.message}"), HttpStatus.BAD_REQUEST)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error("Error fetching report file", e)
             ResponseEntity(
                 mapOf("error" to "Error al obtener el archivo del reporte. Inténtelo de nuevo más tarde"),
                 HttpStatus.INTERNAL_SERVER_ERROR
@@ -550,24 +543,25 @@ class ReportController(
         }
 
         return try {
-            val pageable = PageRequest.of(page, size)
-            val reportsPage = reportService.getAllReportsPaginated(patientId, specialtyId, doctorId, title, pageable)
-            
+            val reportsPage = reportService.getAllReportsPaginated(
+                patientId, specialtyId, doctorId, title, page, size, sortBy, sortDirection
+            )
+
             if (reportsPage.isEmpty) {
                 val filters = mutableListOf<String>()
                 patientId?.let { filters.add("paciente") }
                 specialtyId?.let { filters.add("especialidad") }
                 doctorId?.let { filters.add("doctor") }
                 if (!title.isNullOrBlank()) filters.add("título")
-                
+
                 val message = if (filters.isNotEmpty()) {
                     "No se encontraron reportes en el sistema para los filtros especificados: ${filters.joinToString(", ")}"
                 } else {
                     "No se encontraron reportes en el sistema"
                 }
-                
+
                 return ResponseEntity(mapOf(
-                    "message" to message, 
+                    "message" to message,
                     "reports" to emptyList<Any>(),
                     "totalElements" to 0,
                     "totalPages" to 0,
@@ -581,10 +575,10 @@ class ReportController(
                     )
                 ), HttpStatus.OK)
             }
-            
+
             val response = ReportResponse.listFromModel(reportsPage.content, cloudinaryService)
             ResponseEntity.ok(mapOf(
-                "reports" to response, 
+                "reports" to response,
                 "totalElements" to reportsPage.totalElements,
                 "totalPages" to reportsPage.totalPages,
                 "currentPage" to reportsPage.number,
@@ -601,7 +595,7 @@ class ReportController(
         } catch (e: IllegalArgumentException) {
             ResponseEntity(mapOf("error" to "Parámetros inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error("Error fetching all reports for admin", e)
             ResponseEntity(
                 mapOf("error" to "Error al obtener reportes. Inténtelo de nuevo más tarde"),
                 HttpStatus.INTERNAL_SERVER_ERROR

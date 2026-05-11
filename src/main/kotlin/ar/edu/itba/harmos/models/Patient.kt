@@ -12,7 +12,7 @@ class Patient(
     @Enumerated(EnumType.STRING)
     var status: PatientStatus,
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "patient_doctor",
         joinColumns = [JoinColumn(name = "patient_id")],

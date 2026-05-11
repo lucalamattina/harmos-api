@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
 import java.util.UUID
+import org.slf4j.LoggerFactory
 import javax.persistence.criteria.Predicate
 
 @Service
@@ -33,6 +34,7 @@ class AppUserService(
     private val emailService: EmailService,
     @Value("\${app.frontend.url}") private val frontendUrl: String
 ) {
+    private val logger = LoggerFactory.getLogger(AppUserService::class.java)
 
     fun createUser(createAppUserRequest: CreateAppUserRequest): AppUser {
         if (appUserRepository.findByEmail(createAppUserRequest.email) != null) {

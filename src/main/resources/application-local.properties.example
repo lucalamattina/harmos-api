@@ -1,13 +1,15 @@
-# --- Local Development Configuration ---
+# --- Local Development Configuration (Example) ---
+# Copy this file to application-local.properties and fill in real values.
+# NEVER commit application-local.properties — it is listed in .gitignore.
 
 spring.datasource.url=jdbc:postgresql://localhost:5432/harmos-db
-spring.datasource.username=harmos-db-owner
-spring.datasource.password=j17DgpslK
+spring.datasource.username=CHANGE_ME
+spring.datasource.password=CHANGE_ME
 spring.jpa.hibernate.ddl-auto=create-drop
 
 # Email Configuration
-spring.mail.username=noreplyharmos@gmail.com
-spring.mail.password=crcb vkfs qiia ifcn
+spring.mail.username=CHANGE_ME@gmail.com
+spring.mail.password=CHANGE_ME
 spring.mail.host=smtp.gmail.com
 spring.mail.port=587
 spring.mail.properties.mail.smtp.auth=true

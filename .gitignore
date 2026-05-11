@@ -68,6 +68,8 @@ kapt/
 #env files
 .env*
 
-# AI-generated docs
+# Local development config (contains secrets — never commit)
+src/main/resources/application-local.properties
+
+# AI planning docs
 .planning/
-FRONTEND_CHANGES.md
