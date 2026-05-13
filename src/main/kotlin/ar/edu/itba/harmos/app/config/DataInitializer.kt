@@ -7,12 +7,14 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.transaction.annotation.Transactional
 
 @Configuration
+@ConditionalOnProperty(name = ["app.database.repopulate"], havingValue = "true", matchIfMissing = false)
 class DataInitializer(
         private val appUserRepository: AppUserRepository,
         private val roleRepository: RoleRepository,
@@ -25,22 +27,19 @@ class DataInitializer(
         private val reportRepository: ReportRepository,
         private val passwordEncoder: PasswordEncoder,
         @Value("\${app.database.repopulate:false}") private val repopulateDatabase: Boolean
-) {
+) : CommandLineRunner {
 
-    @Bean
     @Transactional
-    fun initData(): CommandLineRunner {
-        return CommandLineRunner {
-            if (repopulateDatabase) {
-                clearDatabase()
-                initializeRoles()
-                initializeSpecialties()
-                initializeUsers()
-                initializePatients()
-                initializeSchedules()
-                initializeAnnouncements()
-                initializeNotifications()
-            }
+    override fun run(vararg args: String?) {
+        if (repopulateDatabase) {
+            clearDatabase()
+            initializeRoles()
+            initializeSpecialties()
+            initializeUsers()
+            initializePatients()
+            initializeSchedules()
+            initializeAnnouncements()
+            initializeNotifications()
         }
     }
 
@@ -163,7 +162,7 @@ class DataInitializer(
                     AppUser(
                             email =
                                     "doctor$i@harmos.example.com",
-                            password = passwordEncoder.encode("dev-password-change-me"),
+                            password = passwordEncoder.encode("password"),
                             firstName = getRandomFirstName(),
                             lastName = getRandomLastName(),
                             phone = "1234567890",
@@ -176,7 +175,7 @@ class DataInitializer(
                 setOf(
                         AppUser(
                                 email = "admin1@harmos.example.com",
-                                password = passwordEncoder.encode("dev-password-change-me"),
+                                password = passwordEncoder.encode("password"),
                                 firstName = "Admin",
                                 lastName = "One",
                                 phone = "3453453456",
@@ -184,7 +183,7 @@ class DataInitializer(
                         ),
                         AppUser(
                                 email = "admin2@harmos.example.com",
-                                password = passwordEncoder.encode("dev-password-change-me"),
+                                password = passwordEncoder.encode("password"),
                                 firstName = "Admin",
                                 lastName = "Two",
                                 phone = "3453453456",
@@ -195,7 +194,7 @@ class DataInitializer(
         val admin =
                 AppUser(
                         email = "superuser@harmos.example.com",
-                        password = passwordEncoder.encode("dev-password-change-me"),
+                        password = passwordEncoder.encode("password"),
                         firstName = "SUPER",
                         lastName = "USER",
                         phone = "3453453456",

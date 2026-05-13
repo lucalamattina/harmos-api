@@ -4,6 +4,7 @@ import ar.edu.itba.harmos.dtos.responses.AppUserResponse
 import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
 import ar.edu.itba.harmos.dtos.requests.EditAppUserRequest
 import ar.edu.itba.harmos.dtos.requests.ForgotPasswordRequest
+import ar.edu.itba.harmos.dtos.requests.ResetPasswordRequest
 import ar.edu.itba.harmos.dtos.responses.ForgotPasswordResponse
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.ScheduleResponse
@@ -125,7 +126,7 @@ class UserController(
     }
 
     @PostMapping("/forgot-password")
-    fun forgotPassword(@Valid @RequestBody forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<Any> {
+    fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<Any> {
         if (!forgotPasswordRequest.isValid()) {
             val error = forgotPasswordRequest.getValidationError() ?: "Datos inválidos"
             logger.warn("Forgot-password validation failed: {}", error)
@@ -172,10 +173,9 @@ class UserController(
 
     @PostMapping("/reset-password")
     fun resetPassword(
-        @RequestParam token: String,
-        @RequestParam newPassword: String
+        @Valid @RequestBody resetPasswordRequest: ResetPasswordRequest
     ): ResponseEntity<Any> {
-        return if (appUserService.resetPassword(token, newPassword)) {
+        return if (appUserService.resetPassword(resetPasswordRequest.token, resetPasswordRequest.newPassword)) {
             ResponseEntity.ok().build()
         } else {
             ResponseEntity.badRequest().build()
