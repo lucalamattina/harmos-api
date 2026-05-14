@@ -157,7 +157,7 @@ class UserController(
 
     @PostMapping("/create-reset-token")
     fun createResetToken(@RequestParam email: String): ResponseEntity<Any> {
-        appUserService.createPasswordResetToken(email)
+        appUserService.createPasswordResetTokenForUser(email)
         return ResponseEntity(mapOf("message" to "Password reset email sent"), HttpStatus.OK)
     }
 

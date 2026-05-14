@@ -54,6 +54,18 @@ class UserControllerTest {
         return PasswordResetToken(user = user, token = "some-token", expiryDate = expiry, id = 1L)
     }
 
+    // ========================= create-reset-token =========================
+
+    @Test
+    fun `createResetToken delegates to createPasswordResetTokenForUser (email is sent)`() {
+        mockMvc.perform(post("/users/create-reset-token").param("email", "user@example.com"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.message").value("Password reset email sent"))
+
+        verify(appUserService).createPasswordResetTokenForUser("user@example.com")
+        verify(appUserService, never()).createPasswordResetToken(anyString())
+    }
+
     // ========================= forgot-password user-existence oracle =========================
 
     @Test
