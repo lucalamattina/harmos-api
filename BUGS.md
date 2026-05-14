@@ -6,7 +6,7 @@
 
 ---
 
-## Bug 1 — `UserController.createResetToken` calls wrong service method (email never sent)
+## Bug 1 — `UserController.createResetToken` calls wrong service method (email never sent) ✓ FIXED
 
 **Severity:** High  
 **File:** [src/main/kotlin/ar/edu/itba/harmos/app/controller/UserController.kt](src/main/kotlin/ar/edu/itba/harmos/app/controller/UserController.kt#L159-L162)
@@ -54,7 +54,7 @@ The condition should compare against the *report's original owner* (the doctor w
 
 ---
 
-## Bug 3 — `ForgotPasswordRequest.isValid()` and `getValidationError()` are inconsistent
+## Bug 3 — `ForgotPasswordRequest.isValid()` and `getValidationError()` are inconsistent ✓ FIXED
 
 **Severity:** Low (maintenance hazard, not a security issue)  
 **File:** [src/main/kotlin/ar/edu/itba/harmos/dtos/requests/ForgotPasswordRequest.kt](src/main/kotlin/ar/edu/itba/harmos/dtos/requests/ForgotPasswordRequest.kt)
@@ -120,7 +120,7 @@ fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest)
 
 | # | File | Severity | Status | Impact |
 |---|------|----------|--------|--------|
-| 1 | `UserController.kt:160` | High | Open | Password-reset emails never sent via `/create-reset-token` |
-| 2 | `ReportService.kt:139` | Medium | Open | In-app notifications on report creation never fired |
-| 3 | `ForgotPasswordRequest.kt` | Low | Open | Inconsistent validation — maintenance hazard, no runtime security impact |
+| 1 | `UserController.kt:160` | High | **Fixed** | Password-reset emails never sent via `/create-reset-token` |
+| 2 | `ReportService.kt:139` | Medium | Open (manual) | In-app notifications on report creation never fired — requires design decision |
+| 3 | `ForgotPasswordRequest.kt` | Low | **Fixed** | Inconsistent validation — `isValid()` now delegates to `getValidationError()` |
 | 4 | `UserController.kt:129` | Medium | **Fixed** | `@Valid` leaked email-format oracle on `/forgot-password` |
