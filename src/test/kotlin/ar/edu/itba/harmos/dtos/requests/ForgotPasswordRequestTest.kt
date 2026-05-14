@@ -65,20 +65,22 @@ class ForgotPasswordRequestTest {
         assertThat(ForgotPasswordRequest("user=x@domain.com").getValidationError()).isNotNull
     }
 
-    // ===================== known inconsistency =====================
+    // ===================== consistency (F-03 resolved) =====================
 
-    /**
-     * Bug #3: isValid() applies a stricter TLD regex than getValidationError().
-     * An email with a single-char TLD passes all getValidationError() checks (returns null)
-     * but fails isValid() (returns false). Both code paths in the controller return the
-     * same 200 response, so this is safe at runtime but a maintenance hazard.
-     */
     @Test
-    fun `isValid and getValidationError disagree on single-char TLD (known inconsistency)`() {
-        val request = ForgotPasswordRequest("user@test.c")
-        // getValidationError sees no structural problem
-        assertThat(request.getValidationError()).isNull()
-        // but isValid applies the stricter regex and rejects it
-        assertThat(request.isValid()).isFalse
+    fun `isValid and getValidationError are consistent — isValid is true iff getValidationError is null`() {
+        val cases = listOf(
+            "user@example.com",    // valid
+            "user@test.c",         // single-char TLD — both now accept (structural check only)
+            "",                    // blank — both reject
+            "nodomain",            // missing @ — both reject
+            "user=x@domain.com"    // equals sign — both reject
+        )
+        cases.forEach { email ->
+            val req = ForgotPasswordRequest(email)
+            assertThat(req.isValid())
+                .`as`("isValid for '$email' should equal (getValidationError == null)")
+                .isEqualTo(req.getValidationError() == null)
+        }
     }
 }
