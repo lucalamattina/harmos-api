@@ -22,6 +22,7 @@ class PatientService(
     private val appUserRepository: AppUserRepository
 ) {
 
+    @Transactional
     fun createPatient(createPatientRequest: CreatePatientRequest): Patient {
         val doctors = createPatientRequest.doctorIds?.let {
             appUserRepository.findAllById(it)
@@ -38,6 +39,7 @@ class PatientService(
         return patientRepository.save(patient)
     }
 
+    @Transactional(readOnly = true)
     fun getPatients(
         name: String?,
         doctor: String?,
@@ -105,6 +107,7 @@ class PatientService(
         return patientRepository.findAll(spec, pageable)
     }
 
+    @Transactional(readOnly = true)
     fun getPatientById(id: Long): Patient? {
         return patientRepository.findById(id).orElse(null)
     }
@@ -121,24 +124,21 @@ class PatientService(
 
     @Transactional
     fun addDoctorToPatient(patientId: Long, doctorId: Long): Boolean {
-        val patientOpt = patientRepository.findById(patientId)
-        val doctorOpt = appUserRepository.findById(doctorId)
-
-        if (patientOpt.isPresent && doctorOpt.isPresent) {
-            val patient = patientOpt.get()
-            val doctor = doctorOpt.get()
-
-            if (patient.doctors.contains(doctor)) {
-                return false
-            }
-
-            patient.doctors.add(doctor)
-            patientRepository.save(patient)
-            return true
-        }
-        return false
+        if (!patientRepository.existsById(patientId)) return false
+        if (!appUserRepository.existsById(doctorId)) return false
+        patientRepository.addDoctorToPatient(patientId, doctorId)
+        return true
     }
 
+    @Transactional
+    fun removeDoctorFromPatient(patientId: Long, doctorId: Long): Boolean {
+        if (!patientRepository.existsById(patientId)) return false
+        if (!appUserRepository.existsById(doctorId)) return false
+        patientRepository.removeDoctorFromPatient(patientId, doctorId)
+        return true
+    }
+
+    @Transactional
     fun updatePatient(id: Long, editRequest: EditPatientRequest): Patient {
         val patient = patientRepository.findById(id)
             .orElseThrow { RuntimeException("Patient not found with id $id") }
@@ -147,6 +147,12 @@ class PatientService(
         editRequest.lastName?.let { patient.lastName = it }
         editRequest.phone?.let { patient.phone = it }
         editRequest.status?.let { patient.status = it }
+
+        if (editRequest.doctorIds != null) {
+            val newDoctors = appUserRepository.findAllById(editRequest.doctorIds)
+            patient.doctors.clear()
+            patient.doctors.addAll(newDoctors)
+        }
 
         return patientRepository.save(patient)
     }

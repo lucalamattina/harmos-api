@@ -15,7 +15,7 @@ class AppUser (
     @JoinColumn(name = "specialty_id")
     var specialty: Specialty? = null,
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     val roles: MutableSet<Role> = mutableSetOf(),
 
     @OneToMany(mappedBy = "createdBy", cascade = [CascadeType.REMOVE], orphanRemoval = true)

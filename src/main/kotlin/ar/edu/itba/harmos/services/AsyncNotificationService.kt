@@ -73,40 +73,21 @@ class AsyncNotificationService(
     @Async("taskExecutor")
     fun sendAnnouncementEmailsAsync(announcement: Announcement, users: List<AppUser>) {
         logger.debug("Starting async email sending for ${users.size} users on thread: ${Thread.currentThread().name}")
-        
+
         try {
-            // Usar la URL del frontend desde properties
             val announcementLink = "$frontendUrl/announcements/${announcement.id}"
-            
-            // Send emails in batches to avoid overwhelming the email service
-            users.chunked(10).forEachIndexed { batchIndex, userBatch ->
-                userBatch.forEach { user ->
-                    try {
-                        // Usar el template existente con mejor información
-                        val template = EmailTemplate.announcementNotification(
-                            announcementTitle = announcement.title,
-                            announcementContent = announcement.content,
-                            link = announcementLink,
-                            author = "${announcement.createdBy.firstName} ${announcement.createdBy.lastName}",
-                            date = announcement.date.toString(),
-                            specialties = announcement.specialties.joinToString(", ") { it.name }
-                        )
-                        
-                        // Usar el EmailService existente
-                        emailService.sendEmail(user.email, template)
-                        
-                    } catch (e: Exception) {
-                        logger.warn("Failed to send email to ${user.email}: ${e.message}")
-                    }
-                }
-                logger.debug("Sent email batch ${batchIndex + 1} (${userBatch.size} emails)")
-                
-                // Small delay between batches to not overwhelm email service
-                Thread.sleep(100)
-            }
-            
-            logger.info("Completed async email sending for announcement ${announcement.id}")
-            
+            val template = EmailTemplate.announcementNotification(
+                announcementTitle = announcement.title,
+                announcementContent = announcement.content,
+                link = announcementLink,
+                author = "${announcement.createdBy.firstName} ${announcement.createdBy.lastName}",
+                date = announcement.date.toString(),
+                specialties = announcement.specialties.joinToString(", ") { it.name }
+            )
+
+            emailService.sendBatch(users.map { it.email }, template)
+            logger.info("Completed async email sending for announcement ${announcement.id} (${users.size} recipients)")
+
         } catch (e: Exception) {
             logger.error("Error sending announcement emails: ${e.message}", e)
         }

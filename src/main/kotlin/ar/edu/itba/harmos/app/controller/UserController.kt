@@ -4,6 +4,7 @@ import ar.edu.itba.harmos.dtos.responses.AppUserResponse
 import ar.edu.itba.harmos.dtos.requests.CreateAppUserRequest
 import ar.edu.itba.harmos.dtos.requests.EditAppUserRequest
 import ar.edu.itba.harmos.dtos.requests.ForgotPasswordRequest
+import ar.edu.itba.harmos.dtos.requests.ResetPasswordRequest
 import ar.edu.itba.harmos.dtos.responses.ForgotPasswordResponse
 import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.ScheduleResponse
@@ -14,11 +15,13 @@ import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.ScheduleService
 import ar.edu.itba.harmos.services.SpecialtyService
 import ar.edu.itba.harmos.persistence.PasswordResetTokenRepository
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import javax.validation.Valid
 
 @Validated
 @RestController
@@ -31,6 +34,8 @@ class UserController(
     private val passwordResetTokenRepository: PasswordResetTokenRepository
 ) {
 
+    private val logger = LoggerFactory.getLogger(UserController::class.java)
+
     @GetMapping("/me")
     @ResponseBody
     fun getCurrentUser(@CurrentUser appUser: AppUser): ResponseEntity<AppUserResponse> {
@@ -39,7 +44,7 @@ class UserController(
 
     @PostMapping()
     @ResponseBody
-    fun create(@RequestBody createAppUserRequest: CreateAppUserRequest): ResponseEntity<Any> {
+    fun create(@Valid @RequestBody createAppUserRequest: CreateAppUserRequest): ResponseEntity<Any> {
         return try {
             val appUser = appUserService.createUser(createAppUserRequest)
             ResponseEntity(AppUserResponse.singleFromModel(appUser), HttpStatus.CREATED)
@@ -52,7 +57,7 @@ class UserController(
     @ResponseBody
     fun updateUser(
         @PathVariable id: Long,
-        @RequestBody editAppUserRequest: EditAppUserRequest
+        @Valid @RequestBody editAppUserRequest: EditAppUserRequest
     ): ResponseEntity<Any> {
         val updatedUser = appUserService.updateUser(id, editAppUserRequest)
         return if (updatedUser != null) {
@@ -121,59 +126,39 @@ class UserController(
     }
 
     @PostMapping("/forgot-password")
-    fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<ForgotPasswordResponse> {
+    fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<Any> {
         if (!forgotPasswordRequest.isValid()) {
             val error = forgotPasswordRequest.getValidationError() ?: "Datos inválidos"
-            println("Validation failed: $error")
+            logger.warn("Forgot-password validation failed: {}", error)
             return ResponseEntity(
-                ForgotPasswordResponse.validationError(error, forgotPasswordRequest.email), 
-                HttpStatus.BAD_REQUEST
-            )
-        }
-        
-        println("Email validation passed")
-
-        // Verificar si el usuario existe
-        val userExists = appUserService.getAppUserByEmail(forgotPasswordRequest.email.trim()) != null
-        println("User exists: $userExists")
-        
-        if (!userExists) {
-            return ResponseEntity(
-                ForgotPasswordResponse.error("No se encontró un usuario con este email"), 
-                HttpStatus.NOT_FOUND
+                mapOf("message" to "If the email is registered, a reset link will be sent"),
+                HttpStatus.OK
             )
         }
 
-        // Intentar crear el token de reset
+        logger.debug("Forgot-password request received")
+
+        // Attempt to create the reset token; do NOT reveal whether the user exists
         return try {
-            if (appUserService.createPasswordResetTokenForUser(forgotPasswordRequest.email.trim())) {
-                println("Password reset token created successfully")
-                ResponseEntity(ForgotPasswordResponse.success(), HttpStatus.OK)
-            } else {
-                println("Failed to create password reset token")
-                ResponseEntity(
-                    ForgotPasswordResponse.error("No se pudo procesar la solicitud. Inténtalo de nuevo más tarde."), 
-                    HttpStatus.INTERNAL_SERVER_ERROR
-                )
-            }
-        } catch (e: Exception) {
-            println("Exception creating password reset token: ${e.message}")
-            e.printStackTrace()
+            appUserService.createPasswordResetTokenForUser(forgotPasswordRequest.email.trim())
+            logger.info("Forgot-password flow completed for request")
             ResponseEntity(
-                ForgotPasswordResponse.error("Error interno del servidor: ${e.message}"), 
-                HttpStatus.INTERNAL_SERVER_ERROR
+                mapOf("message" to "If the email is registered, a reset link will be sent"),
+                HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            logger.error("Error processing forgot-password request", e)
+            ResponseEntity(
+                mapOf("message" to "If the email is registered, a reset link will be sent"),
+                HttpStatus.OK
             )
         }
     }
 
     @PostMapping("/create-reset-token")
     fun createResetToken(@RequestParam email: String): ResponseEntity<Any> {
-        val token = appUserService.createPasswordResetToken(email)
-        return if (token != null) {
-            ResponseEntity.ok(mapOf("token" to token))
-        } else {
-            ResponseEntity.notFound().build()
-        }
+        appUserService.createPasswordResetTokenForUser(email)
+        return ResponseEntity(mapOf("message" to "Password reset email sent"), HttpStatus.OK)
     }
 
     @GetMapping("/validate-reset-token")
@@ -188,10 +173,9 @@ class UserController(
 
     @PostMapping("/reset-password")
     fun resetPassword(
-        @RequestParam token: String,
-        @RequestParam newPassword: String
+        @Valid @RequestBody resetPasswordRequest: ResetPasswordRequest
     ): ResponseEntity<Any> {
-        return if (appUserService.resetPassword(token, newPassword)) {
+        return if (appUserService.resetPassword(resetPasswordRequest.token, resetPasswordRequest.newPassword)) {
             ResponseEntity.ok().build()
         } else {
             ResponseEntity.badRequest().build()

@@ -5,6 +5,7 @@ import ar.edu.itba.harmos.dtos.requests.EditPatientRequest
 import ar.edu.itba.harmos.dtos.responses.PatientResponse
 import ar.edu.itba.harmos.dtos.responses.ReportResponse
 import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.models.AppUserRole
 import ar.edu.itba.harmos.models.PatientStatus
 import ar.edu.itba.harmos.security.annotations.CurrentUser
 import ar.edu.itba.harmos.services.AppUserService
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import javax.validation.Valid
 
 @Validated
 @RestController
@@ -36,7 +38,17 @@ class PatientController(
 
     @PostMapping()
     @ResponseBody
-    fun create(@RequestBody createPatientRequest: CreatePatientRequest): ResponseEntity<Any> {
+    fun create(
+        @Valid @RequestBody createPatientRequest: CreatePatientRequest,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+        val isAdmin = appUser.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+        if (!isAdmin) {
+            return ResponseEntity(mapOf("error" to "Forbidden: only administrators can create patients"), HttpStatus.FORBIDDEN)
+        }
         val patient = patientService.createPatient(createPatientRequest)
         return ResponseEntity(PatientResponse.singleFromModel(patient), HttpStatus.CREATED)
     }
@@ -66,9 +78,16 @@ class PatientController(
         @RequestParam(required = false) status: PatientStatus?,
         @RequestParam(required = false) specialty: String?,
         @RequestParam(required = false) doctorId: Long?,
-        pageable: Pageable
-    ): ResponseEntity<Page<PatientResponse>> {
-        val patients = patientService.getPatients(name, doctor, specialty, status, doctorId, pageable)
+        pageable: Pageable,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+        val isAdmin = appUser.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+        // Non-admins can only see their own patients; ignore any doctorId param they send.
+        val effectiveDoctorId = if (isAdmin) doctorId else appUser.id
+        val patients = patientService.getPatients(name, doctor, specialty, status, effectiveDoctorId, pageable)
         return ResponseEntity.ok(patients.map { PatientResponse.singleFromModel(it) })
     }
 
@@ -76,12 +95,28 @@ class PatientController(
     fun addDoctorToPatient(@PathVariable patientId: Long, @PathVariable doctorId: Long): ResponseEntity<Any> {
         val patient = patientService.getPatientById(patientId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
         val doctor = appUserService.getAppUserById(doctorId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
-        
+
         if (patient.doctors.contains(doctor)) {
             return ResponseEntity(HttpStatus.NO_CONTENT)
         }
-        
+
         return if (patientService.addDoctorToPatient(patientId, doctorId)) {
+            ResponseEntity(HttpStatus.NO_CONTENT)
+        } else {
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
+
+    @DeleteMapping("/{patientId}/doctors/{doctorId}")
+    fun removeDoctorFromPatient(@PathVariable patientId: Long, @PathVariable doctorId: Long): ResponseEntity<Any> {
+        val patient = patientService.getPatientById(patientId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+        val doctor = appUserService.getAppUserById(doctorId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+
+        if (!patient.doctors.contains(doctor)) {
+            return ResponseEntity(HttpStatus.NO_CONTENT)
+        }
+
+        return if (patientService.removeDoctorFromPatient(patientId, doctorId)) {
             ResponseEntity(HttpStatus.NO_CONTENT)
         } else {
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -91,10 +126,14 @@ class PatientController(
     @PutMapping("/{id}")
     fun updatePatient(
         @PathVariable id: Long,
-        @RequestBody editRequest: EditPatientRequest
+        @Valid @RequestBody editRequest: EditPatientRequest
     ): ResponseEntity<Any> {
-        val updatedPatient = patientService.updatePatient(id, editRequest)
-        return ResponseEntity.ok(PatientResponse.singleFromModel(updatedPatient))
+        return try {
+            val updatedPatient = patientService.updatePatient(id, editRequest)
+            ResponseEntity.ok(PatientResponse.singleFromModel(updatedPatient))
+        } catch (ex: RuntimeException) {
+            ResponseEntity(mapOf("error" to "Patient not found"), HttpStatus.NOT_FOUND)
+        }
     }
 
     @GetMapping("/{patientId}/reports")

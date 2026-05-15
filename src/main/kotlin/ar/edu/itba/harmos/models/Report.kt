@@ -1,5 +1,7 @@
 package ar.edu.itba.harmos.models
 
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
 import javax.persistence.*
 import java.time.LocalDateTime
 
@@ -25,11 +27,19 @@ class Report(
 
     val date: LocalDateTime = LocalDateTime.now(),
 
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    var updatedAt: LocalDateTime = LocalDateTime.now(),
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1,
-){
-    constructor() : this( "", Patient(), AppUser(), Specialty(), "", LocalDateTime.now())
+) {
+    constructor() : this("", Patient(), AppUser(), Specialty(), "", LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

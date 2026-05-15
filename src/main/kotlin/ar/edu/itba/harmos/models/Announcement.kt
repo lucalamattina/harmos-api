@@ -1,5 +1,7 @@
 package ar.edu.itba.harmos.models
 
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
 import java.time.LocalDateTime
 import javax.persistence.*
 
@@ -8,10 +10,10 @@ import javax.persistence.*
 class Announcement(
     @Column(columnDefinition = "TEXT")
     var title: String,
-    
+
     @Column(columnDefinition = "TEXT")
     var content: String,
-    
+
     val date: LocalDateTime,
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -24,7 +26,7 @@ class Announcement(
 
     @ManyToOne(fetch = FetchType.EAGER)
     val createdBy: AppUser,
-    
+
     @ElementCollection
     @CollectionTable(name = "announcement_images", joinColumns = [JoinColumn(name = "announcement_id")])
     @Column(name = "image_url")
@@ -34,14 +36,20 @@ class Announcement(
     @CollectionTable(name = "announcement_files", joinColumns = [JoinColumn(name = "announcement_id")])
     @Column(name = "file_url")
     var files: MutableList<String> = mutableListOf(),
-    
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    var updatedAt: LocalDateTime = LocalDateTime.now(),
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
-    constructor() : this("","", LocalDateTime.MIN, mutableSetOf(), AppUser(), mutableListOf(), mutableListOf()) {
-
-    }
+    constructor() : this("", "", LocalDateTime.MIN, mutableSetOf(), AppUser(), mutableListOf(), mutableListOf(), LocalDateTime.now(), LocalDateTime.now())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

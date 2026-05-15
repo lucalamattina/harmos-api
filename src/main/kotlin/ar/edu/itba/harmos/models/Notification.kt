@@ -1,5 +1,7 @@
 package ar.edu.itba.harmos.models
 
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
 import java.time.LocalDateTime
 import javax.persistence.*
 
@@ -25,11 +27,19 @@ class Notification(
     @Column(nullable = true)
     val reportId: Long? = null,
 
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    var updatedAt: LocalDateTime = LocalDateTime.now(),
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = -1
 ) {
-    constructor() : this("", false, LocalDateTime.now(), AppUser(), null, null)
+    constructor() : this("", false, LocalDateTime.now(), AppUser(), null, null, LocalDateTime.now(), LocalDateTime.now())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -42,4 +52,4 @@ class Notification(
     override fun hashCode(): Int {
         return id.hashCode()
     }
-} 
+}

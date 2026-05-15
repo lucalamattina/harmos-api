@@ -6,15 +6,18 @@ import ar.edu.itba.harmos.security.AuthorizationFilter
 import ar.edu.itba.harmos.services.AppUserDetailsService
 import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.models.AppUserRole
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
+import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
@@ -27,7 +30,7 @@ class SecurityConfiguration(
     private val appUserDetailsService: AppUserDetailsService,
     private val appUserService: AppUserService,
     private val passwordEncoder: PasswordEncoder
-) : WebSecurityConfigurerAdapter() {
+) {
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
@@ -46,8 +49,20 @@ class SecurityConfiguration(
         return source
     }
 
-    @Throws(java.lang.Exception::class)
-    override fun configure(http: HttpSecurity) {
+    @Autowired
+    fun configure(auth: AuthenticationManagerBuilder) {
+        auth.userDetailsService(appUserDetailsService).passwordEncoder(passwordEncoder)
+    }
+
+    @Bean
+    fun authenticationManager(authenticationConfiguration: AuthenticationConfiguration): AuthenticationManager {
+        return authenticationConfiguration.authenticationManager
+    }
+
+    @Bean
+    fun filterChain(http: HttpSecurity, authenticationManager: AuthenticationManager): SecurityFilterChain {
+        val authManager = authenticationManager
+
         http.cors().and().csrf().disable()
             .exceptionHandling()
             .authenticationEntryPoint { request, response, authException ->
@@ -77,13 +92,10 @@ class SecurityConfiguration(
             .antMatchers(HttpMethod.POST, "/patients/*/doctors/*").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .anyRequest().authenticated()
             .and()
-            .addFilter(AuthenticationFilter(authenticationManager(), appUserService))
-            .addFilterAfter(AuthorizationFilter(authenticationManager()), AuthenticationFilter::class.java)
+            .addFilter(AuthenticationFilter(authManager, appUserService))
+            .addFilterAfter(AuthorizationFilter(authManager), AuthenticationFilter::class.java)
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-    }
 
-    @Throws(Exception::class)
-    override fun configure(auth: AuthenticationManagerBuilder) {
-        auth.userDetailsService(appUserDetailsService).passwordEncoder(passwordEncoder)
+        return http.build()
     }
 }

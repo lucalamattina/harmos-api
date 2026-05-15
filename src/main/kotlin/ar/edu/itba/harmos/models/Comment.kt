@@ -3,6 +3,8 @@ package ar.edu.itba.harmos.models
 import javax.persistence.*
 import java.time.LocalDateTime
 
+// TODO: Comment feature is incomplete — no repository, service, or controller wired up.
+// Do not use this entity until the feature is fully implemented.
 @Entity
 @Table(name = "Comments")
 class Comment(

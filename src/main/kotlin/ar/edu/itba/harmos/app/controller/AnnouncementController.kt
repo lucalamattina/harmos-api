@@ -6,15 +6,18 @@ import ar.edu.itba.harmos.dtos.responses.AnnouncementResponse
 import ar.edu.itba.harmos.dtos.responses.AppUserResponse
 import ar.edu.itba.harmos.models.Announcement
 import ar.edu.itba.harmos.models.AppUser
+import ar.edu.itba.harmos.models.AppUserRole
 import ar.edu.itba.harmos.security.annotations.CurrentUser
 import ar.edu.itba.harmos.services.AnnouncementService
 import ar.edu.itba.harmos.services.AppUserService
 import ar.edu.itba.harmos.services.CloudinaryService
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
+import javax.validation.Valid
 
 
 @Validated
@@ -24,10 +27,12 @@ class AnnouncementController(
     private val announcementService: AnnouncementService,
     private val cloudinaryService: CloudinaryService
 ) {
+    private val logger = LoggerFactory.getLogger(AnnouncementController::class.java)
+
     @PostMapping()
     @ResponseBody
     fun create(
-        @RequestBody createAnnouncementRequest: CreateAnnouncementRequest,
+        @Valid @RequestBody createAnnouncementRequest: CreateAnnouncementRequest,
         @CurrentUser appUser: AppUser?
     ): ResponseEntity<Any> {
         if (appUser == null) {
@@ -38,8 +43,8 @@ class AnnouncementController(
                 ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
             ResponseEntity(AnnouncementResponse.singleFromModel(announcement), HttpStatus.CREATED)
         } catch (ex: Exception) {
-            ex.printStackTrace() // O usa un logger
-            ResponseEntity(mapOf("error" to (ex.message ?: "Error interno")), HttpStatus.INTERNAL_SERVER_ERROR)
+            logger.error("Error creating announcement", ex)
+            ResponseEntity(mapOf("error" to "Error interno"), HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -128,19 +133,45 @@ class AnnouncementController(
     @PutMapping("/{id}")
     fun updateAnnouncement(
         @PathVariable id: Long,
-        @RequestBody editRequest: EditAnnouncementRequest
+        @Valid @RequestBody editRequest: EditAnnouncementRequest,
+        @CurrentUser appUser: AppUser?
     ): ResponseEntity<Any> {
-        val updatedAnnouncement = announcementService.updateAnnouncement(id, editRequest)
-        return ResponseEntity.ok(AnnouncementResponse.singleFromModel(updatedAnnouncement))
+        if (appUser == null) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+        val announcement = announcementService.getAnnouncementById(id)
+            ?: return ResponseEntity(mapOf("error" to "Announcement not found"), HttpStatus.NOT_FOUND)
+        val isAdmin = appUser.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+        if (!isAdmin && announcement.createdBy.id != appUser.id) {
+            return ResponseEntity(mapOf("error" to "Forbidden: you do not own this announcement"), HttpStatus.FORBIDDEN)
+        }
+        return try {
+            val updatedAnnouncement = announcementService.updateAnnouncement(id, editRequest)
+            ResponseEntity.ok(AnnouncementResponse.singleFromModel(updatedAnnouncement))
+        } catch (ex: RuntimeException) {
+            ResponseEntity(mapOf("error" to "Announcement not found"), HttpStatus.NOT_FOUND)
+        }
     }
 
     @DeleteMapping("/{id}")
-    fun deleteAnnouncement(@PathVariable id: Long): ResponseEntity<Void> {
+    fun deleteAnnouncement(
+        @PathVariable id: Long,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+        val announcement = announcementService.getAnnouncementById(id)
+            ?: return ResponseEntity(mapOf("error" to "Announcement not found"), HttpStatus.NOT_FOUND)
+        val isAdmin = appUser.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+        if (!isAdmin && announcement.createdBy.id != appUser.id) {
+            return ResponseEntity(mapOf("error" to "Forbidden: you do not own this announcement"), HttpStatus.FORBIDDEN)
+        }
         val deleted = announcementService.deleteAnnouncement(id)
         return if (deleted) {
             ResponseEntity(HttpStatus.NO_CONTENT)
         } else {
-            ResponseEntity(HttpStatus.NOT_FOUND)
+            ResponseEntity(mapOf("error" to "Announcement not found"), HttpStatus.NOT_FOUND)
         }
     }
 
@@ -197,7 +228,7 @@ class AnnouncementController(
                     errors.add("Imagen ${image.originalFilename}: Error de Cloudinary - ${e.message}")
                 } catch (e: Exception) {
                     errors.add("Imagen ${image.originalFilename}: Error inesperado - ${e.javaClass.simpleName}: ${e.message}")
-                    e.printStackTrace() // Para debugging
+                    logger.error("Unexpected error uploading file", e)
                 }
             }
 
@@ -238,7 +269,7 @@ class AnnouncementController(
                     errors.add("Archivo ${file.originalFilename}: Error de Cloudinary - ${e.message}")
                 } catch (e: Exception) {
                     errors.add("Archivo ${file.originalFilename}: Error inesperado - ${e.javaClass.simpleName}: ${e.message}")
-                    e.printStackTrace() // Para debugging
+                    logger.error("Unexpected error uploading file", e)
                 }
             }
 

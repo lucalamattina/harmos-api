@@ -1,8 +1,8 @@
 # Configuración de Cloudinary
 cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:hwhkb6um4}
-  api-key: ${CLOUDINARY_API_KEY:865466632331663}
-  api-secret: ${CLOUDINARY_API_SECRET:Gn4qNjMGA6uWQbW8Qr0QyIDyIew}
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
 
 # Configuración para subida de archivos
 spring:

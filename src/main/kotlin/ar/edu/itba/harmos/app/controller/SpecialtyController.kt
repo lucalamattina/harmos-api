@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.dao.DataIntegrityViolationException
+import javax.validation.Valid
 
 @Validated
 @RestController
@@ -25,7 +26,7 @@ class SpecialtyController(
 
     @PostMapping()
     @ResponseBody
-    fun create(@RequestBody createSpecialtyRequest: CreateSpecialtyRequest): ResponseEntity<Any> {
+    fun create(@Valid @RequestBody createSpecialtyRequest: CreateSpecialtyRequest): ResponseEntity<Any> {
         val specialty = specialtyService.createSpecialty(createSpecialtyRequest)
         return if (specialty != null) {
             ResponseEntity(SpecialtyResponse.singleFromModel(specialty), HttpStatus.CREATED)
@@ -59,7 +60,7 @@ class SpecialtyController(
 
     @PutMapping("/{id}")
     @ResponseBody
-    fun update(@PathVariable id: Long, @RequestBody editSpecialtyRequest: EditSpecialtyRequest): ResponseEntity<Any> {
+    fun update(@PathVariable id: Long, @Valid @RequestBody editSpecialtyRequest: EditSpecialtyRequest): ResponseEntity<Any> {
         return try {
             val updatedSpecialty = specialtyService.updateSpecialty(id, editSpecialtyRequest)
             if (updatedSpecialty != null) {

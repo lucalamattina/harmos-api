@@ -7,13 +7,14 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.transaction.annotation.Transactional
 
 @Configuration
+@ConditionalOnProperty(name = ["app.database.repopulate"], havingValue = "true", matchIfMissing = false)
 class DataInitializer(
         private val appUserRepository: AppUserRepository,
         private val roleRepository: RoleRepository,
@@ -25,24 +26,20 @@ class DataInitializer(
         private val passwordResetTokenRepository: PasswordResetTokenRepository,
         private val reportRepository: ReportRepository,
         private val passwordEncoder: PasswordEncoder,
-        private val jdbcTemplate: JdbcTemplate,
         @Value("\${app.database.repopulate:false}") private val repopulateDatabase: Boolean
-) {
+) : CommandLineRunner {
 
-    @Bean
     @Transactional
-    fun initData(): CommandLineRunner {
-        return CommandLineRunner {
-            if (repopulateDatabase) {
-                clearDatabase()
-                initializeRoles()
-                initializeSpecialties()
-                initializeUsers()
-                initializePatients()
-                initializeSchedules()
-                initializeAnnouncements()
-                initializeNotifications()
-            }
+    override fun run(vararg args: String?) {
+        if (repopulateDatabase) {
+            clearDatabase()
+            initializeRoles()
+            initializeSpecialties()
+            initializeUsers()
+            initializePatients()
+            initializeSchedules()
+            initializeAnnouncements()
+            initializeNotifications()
         }
     }
 
@@ -164,7 +161,7 @@ class DataInitializer(
                 (1..30).map { i ->
                     AppUser(
                             email =
-                                    "${getRandomFirstName().lowercase()}.${getRandomLastName().lowercase()}$i@example.com",
+                                    "doctor$i@harmos.example.com",
                             password = passwordEncoder.encode("password"),
                             firstName = getRandomFirstName(),
                             lastName = getRandomLastName(),
@@ -177,18 +174,18 @@ class DataInitializer(
         val users =
                 setOf(
                         AppUser(
-                                email = "alejandro.rolandelli@gmail.com",
+                                email = "admin1@harmos.example.com",
                                 password = passwordEncoder.encode("password"),
-                                firstName = "Alejandro",
-                                lastName = "Rolandelli",
+                                firstName = "Admin",
+                                lastName = "One",
                                 phone = "3453453456",
                                 roles = mutableSetOf(doctorRole, adminRole)
                         ),
                         AppUser(
-                                email = "dorado.tomas@gmail.com",
+                                email = "admin2@harmos.example.com",
                                 password = passwordEncoder.encode("password"),
-                                firstName = "Tomas",
-                                lastName = "Dorado",
+                                firstName = "Admin",
+                                lastName = "Two",
                                 phone = "3453453456",
                                 roles = mutableSetOf(doctorRole, adminRole)
                         )
@@ -196,7 +193,7 @@ class DataInitializer(
 
         val admin =
                 AppUser(
-                        email = "noreplyharmos@gmail.com",
+                        email = "superuser@harmos.example.com",
                         password = passwordEncoder.encode("password"),
                         firstName = "SUPER",
                         lastName = "USER",
@@ -237,13 +234,12 @@ class DataInitializer(
         val daysOfWeek = DayOfWeek.values()
 
         if (doctors.isEmpty() || patients.isEmpty()) {
-            println("Not enough doctors or patients to create schedules.")
             return
         }
 
         val numberOfSchedules = 20
 
-        for (i in 0 until numberOfSchedules) {
+        val schedules = (0 until numberOfSchedules).map {
             val randomDoctor = doctors.random()
             val randomPatient = patients.random()
             val randomDay = daysOfWeek.random()
@@ -252,21 +248,18 @@ class DataInitializer(
             val hourTo = hourFrom + 1
             val minuteTo = minuteFrom
 
-            jdbcTemplate.update(
-                    """
-                    INSERT INTO schedule (day_of_week, doctor_user_id, hour_from, hour_to, minute_from, minute_to, patient_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """
-                            .trimIndent(),
-                    randomDay.ordinal,
-                    randomDoctor.id,
-                    hourFrom,
-                    hourTo,
-                    minuteFrom,
-                    minuteTo,
-                    randomPatient.id
+            Schedule(
+                    dayOfWeek = randomDay,
+                    hourFrom = hourFrom,
+                    minuteFrom = minuteFrom,
+                    hourTo = hourTo,
+                    minuteTo = minuteTo,
+                    doctor = randomDoctor,
+                    patient = randomPatient
             )
         }
+
+        scheduleRepository.saveAll(schedules)
     }
 
     private fun initializeAnnouncements() {
@@ -334,5 +327,7 @@ class DataInitializer(
                 }
             }
         }
+
+        notificationRepository.saveAll(notifications)
     }
 }

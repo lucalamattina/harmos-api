@@ -16,6 +16,7 @@ import ar.edu.itba.harmos.services.EmailService
 import ar.edu.itba.harmos.services.CloudinaryService
 import ar.edu.itba.harmos.models.Notification
 import ar.edu.itba.harmos.models.EmailTemplate
+import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.transaction.annotation.Transactional
 
@@ -26,6 +27,8 @@ class AnnouncementService(
     private val asyncNotificationService: AsyncNotificationService,
     private val cloudinaryService: CloudinaryService
 ) {
+    private val logger = LoggerFactory.getLogger(AnnouncementService::class.java)
+
     fun createAnnouncement(createAnnouncementRequest: CreateAnnouncementRequest, createdBy: AppUser): Announcement? {
         var specialties = createAnnouncementRequest.specialties.mapNotNull { specialtyName ->
             specialtyService.getSpecialtyByName(specialtyName)
@@ -97,46 +100,43 @@ class AnnouncementService(
         val announcement = getAnnouncementById(id) ?: return false
         
         try {
-            println("Deleting announcement $id with ${announcement.images.size} images and ${announcement.files.size} files")
-            
+            logger.info("Deleting announcement $id with ${announcement.images.size} images and ${announcement.files.size} files")
+
             // Eliminar imágenes de Cloudinary
             announcement.images.forEach { imageUrl ->
                 try {
-                    println("Attempting to delete image: $imageUrl")
+                    logger.debug("Attempting to delete image: $imageUrl")
                     val deleted = cloudinaryService.deleteFileEnhanced(imageUrl, "image")
-                    println("Image deletion result: $deleted")
+                    logger.debug("Image deletion result: $deleted")
                     if (!deleted) {
-                        println("WARNING: Failed to delete image from Cloudinary: $imageUrl")
+                        logger.warn("Failed to delete image from Cloudinary: $imageUrl")
                     }
                 } catch (e: Exception) {
-                    println("Error deleting image from Cloudinary: ${e.message}")
-                    e.printStackTrace()
+                    logger.error("Error deleting image from Cloudinary: $imageUrl", e)
                 }
             }
-            
+
             // Eliminar archivos de Cloudinary
             announcement.files.forEach { fileUrl ->
                 try {
-                    println("Attempting to delete file: $fileUrl")
+                    logger.debug("Attempting to delete file: $fileUrl")
                     val deleted = cloudinaryService.deleteFileEnhanced(fileUrl, "raw")
-                    println("File deletion result: $deleted")
+                    logger.debug("File deletion result: $deleted")
                     if (!deleted) {
-                        println("WARNING: Failed to delete file from Cloudinary: $fileUrl")
+                        logger.warn("Failed to delete file from Cloudinary: $fileUrl")
                     }
                 } catch (e: Exception) {
-                    println("Error deleting file from Cloudinary: ${e.message}")
-                    e.printStackTrace()
+                    logger.error("Error deleting file from Cloudinary: $fileUrl", e)
                 }
             }
-            
+
             // Eliminar anuncio de la base de datos
-            println("Deleting announcement from database")
+            logger.debug("Deleting announcement from database")
             announcementRepository.deleteById(id)
-            println("Announcement $id deleted successfully")
+            logger.info("Announcement $id deleted successfully")
             return true
         } catch (e: Exception) {
-            println("Error deleting announcement: ${e.message}")
-            e.printStackTrace()
+            logger.error("Error deleting announcement with id $id", e)
             return false
         }
     }

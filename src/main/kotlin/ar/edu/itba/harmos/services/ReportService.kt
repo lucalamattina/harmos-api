@@ -5,10 +5,15 @@ import ar.edu.itba.harmos.dtos.requests.EditReportRequest
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.AppUserRole
 import ar.edu.itba.harmos.models.Notification
+import ar.edu.itba.harmos.models.Patient
 import ar.edu.itba.harmos.models.Report
 import ar.edu.itba.harmos.persistence.ReportRepository
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 
 @Service
@@ -20,11 +25,90 @@ class ReportService(
     private val notificationService: NotificationService,
     private val asyncNotificationService: AsyncNotificationService
 ) {
-    
+
+    private val logger = LoggerFactory.getLogger(ReportService::class.java)
+
+    // ========================= SHARED HELPERS =========================
+
+    fun isAdmin(user: AppUser): Boolean {
+        return user.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+    }
+
+    // ========================= SPECIFICATIONS =========================
+
+    // ====================== Sort whitelist (D.1) ======================
+    private val allowedSortFields = setOf("id", "title", "date")
+    private val allowedSortDirections = setOf("asc", "desc")
+
+    private fun byTitle(title: String?) = Specification<Report> { root, _, cb ->
+        if (title != null) cb.like(cb.lower(root.get("title")), "%${title.lowercase()}%") else null
+    }
+
+    private fun byPatientId(patientId: Long?) = Specification<Report> { root, _, cb ->
+        if (patientId != null) cb.equal(root.get<Any>("patient").get<Long>("id"), patientId) else null
+    }
+
+    private fun bySpecialtyId(specialtyId: Long?) = Specification<Report> { root, _, cb ->
+        if (specialtyId != null) cb.equal(root.get<Any>("specialty").get<Long>("id"), specialtyId) else null
+    }
+
+    private fun byDoctorId(doctorId: Long?) = Specification<Report> { root, _, cb ->
+        if (doctorId != null) cb.equal(root.get<Any>("doctor").get<Long>("id"), doctorId) else null
+    }
+
+    // Returns reports whose patient is assigned to the given doctor (via patient_doctor join table).
+    private fun byPatientOfDoctor(doctorId: Long?) = Specification<Report> { root, query, cb ->
+        if (doctorId != null) {
+            val subquery = query!!.subquery(Long::class.java)
+            val patientRoot = subquery.from(Patient::class.java)
+            val doctorJoin = patientRoot.join<Patient, AppUser>("doctors")
+            subquery.select(patientRoot.get("id"))
+                .where(cb.equal(doctorJoin.get<Long>("id"), doctorId))
+            root.get<Patient>("patient").get<Long>("id").`in`(subquery)
+        } else null
+    }
+
+    private fun buildSpec(
+        title: String?,
+        patientId: Long?,
+        specialtyId: Long?,
+        doctorId: Long?
+    ): Specification<Report> =
+        Specification.where(byTitle(title))
+            .and(byPatientId(patientId))
+            .and(bySpecialtyId(specialtyId))
+            .and(byDoctorId(doctorId))
+
+    private fun buildPageable(page: Int, size: Int, sortBy: String?, sortDirection: String?): Pageable {
+        // Whitelist sortBy: only id/title/date are accepted; otherwise fall back to date.
+        val field = if (sortBy != null && allowedSortFields.contains(sortBy)) sortBy else "date"
+
+        // Whitelist sortDirection: only asc/desc; otherwise fall back to desc.
+        val normalizedDir = sortDirection?.lowercase()
+        val direction = if (normalizedDir != null && allowedSortDirections.contains(normalizedDir)) {
+            Sort.Direction.fromString(normalizedDir)
+        } else {
+            if (sortDirection != null) {
+                logger.warn("Invalid sortDirection '{}', defaulting to DESC", sortDirection)
+            }
+            Sort.Direction.DESC
+        }
+
+        // Case-insensitive ordering for title (locale-aware via DB collation when LOWER is applied).
+        val order = if (field == "title") {
+            Sort.Order(direction, field).ignoreCase()
+        } else {
+            Sort.Order(direction, field)
+        }
+        return PageRequest.of(page, size, Sort.by(order))
+    }
+
+    // ========================= CRUD METHODS =========================
+
     fun createReportWithFile(createReportRequest: CreateReportRequest, doctor: AppUser, fileUrl: String): Report? {
         val patient = patientService.getPatientById(createReportRequest.patientId)
             ?: return null
-        
+
         val specialty = specialtyService.getSpecialtyById(createReportRequest.specialtyId)
             ?: return null
 
@@ -62,8 +146,7 @@ class ReportService(
                 )
                 notificationService.create(notification)
             } catch (e: Exception) {
-                println("Error creating notification for report ${savedReport.id}: ${e.message}")
-                e.printStackTrace()
+                logger.error("Error creating notification for report ${savedReport.id}", e)
             }
         }
 
@@ -80,7 +163,7 @@ class ReportService(
         val patient = if (editReportRequest.patientId != null) {
             val newPatient = patientService.getPatientById(editReportRequest.patientId)
                 ?: throw IllegalArgumentException("Paciente no encontrado")
-            
+
             // Verificar que el doctor tenga acceso al nuevo paciente (solo si no es admin)
             if (!isAdmin(doctor) && !newPatient.doctors.contains(doctor)) {
                 throw IllegalAccessException("El doctor no tiene acceso a este paciente")
@@ -94,7 +177,7 @@ class ReportService(
         val specialty = if (editReportRequest.specialtyId != null) {
             val newSpecialty = specialtyService.getSpecialtyById(editReportRequest.specialtyId)
                 ?: throw IllegalArgumentException("Especialidad no encontrada")
-            
+
             // Verificar que el doctor tenga la especialidad (solo si no es admin)
             if (!isAdmin(doctor) && doctor.specialty != newSpecialty) {
                 throw IllegalAccessException("El doctor no tiene esta especialidad")
@@ -108,32 +191,37 @@ class ReportService(
         var newFileUrl = report.fileUrl
         if (newFile != null && !newFile.isEmpty) {
             try {
-                // Subir el nuevo archivo
-                val uploadedFileUrl = cloudinaryService.uploadDocument(newFile, "reports")
+                // Routing: imágenes (jpg/jpeg/png por MIME) van por uploadImage,
+                // documentos por uploadDocument. La validación AND ya pasó en el controller.
+                val mime = newFile.contentType
+                val isImage = mime == "image/jpeg" || mime == "image/jpg" || mime == "image/png"
+                val uploadedFileUrl = if (isImage) {
+                    cloudinaryService.uploadImage(newFile, "reports")
+                } else {
+                    cloudinaryService.uploadDocument(newFile, "reports")
+                }
                 if (uploadedFileUrl.isBlank()) {
                     throw RuntimeException("Error al subir el nuevo archivo")
                 }
-                
+
                 // Borrar el archivo anterior si existe
                 if (report.fileUrl.isNotBlank()) {
                     try {
-                        println("Attempting to delete old report file: ${report.fileUrl}")
+                        logger.info("Attempting to delete old report file: {}", report.fileUrl)
                         val deleted = cloudinaryService.deleteFileEnhanced(report.fileUrl, "raw")
                         if (!deleted) {
-                            println("WARNING: Failed to delete old report file from Cloudinary: ${report.fileUrl}")
+                            logger.warn("Failed to delete old report file from Cloudinary: {}", report.fileUrl)
                         } else {
-                            println("Successfully deleted old report file from Cloudinary")
+                            logger.info("Successfully deleted old report file from Cloudinary")
                         }
                     } catch (e: Exception) {
-                        println("Error eliminando archivo anterior ${report.fileUrl}: ${e.message}")
-                        e.printStackTrace()
+                        logger.error("Error eliminando archivo anterior {}", report.fileUrl, e)
                     }
                 }
-                
+
                 newFileUrl = uploadedFileUrl
             } catch (e: Exception) {
-                println("Error actualizando archivo del reporte: ${e.message}")
-                e.printStackTrace()
+                logger.error("Error actualizando archivo del reporte", e)
                 throw RuntimeException("Error al actualizar el archivo del reporte: ${e.message}")
             }
         }
@@ -163,8 +251,7 @@ class ReportService(
                 notificationService.create(notification)
                 asyncNotificationService.sendReportModifiedEmailAsync(savedReport, doctor)
             } catch (e: Exception) {
-                println("Error creating notification for report update ${savedReport.id}: ${e.message}")
-                e.printStackTrace()
+                logger.error("Error creating notification for report update ${savedReport.id}", e)
             }
         }
 
@@ -180,28 +267,26 @@ class ReportService(
         return try {
             // Eliminar archivo de Cloudinary usando método mejorado
             try {
-                println("Attempting to delete report file: ${report.fileUrl}")
+                logger.info("Attempting to delete report file: {}", report.fileUrl)
                 val deleted = cloudinaryService.deleteFileEnhanced(report.fileUrl, "raw")
                 if (!deleted) {
-                    println("WARNING: Failed to delete report file from Cloudinary: ${report.fileUrl}")
+                    logger.warn("Failed to delete report file from Cloudinary: {}", report.fileUrl)
                 } else {
-                    println("Successfully deleted report file from Cloudinary")
+                    logger.info("Successfully deleted report file from Cloudinary")
                 }
             } catch (e: Exception) {
-                println("Error eliminando archivo ${report.fileUrl}: ${e.message}")
-                e.printStackTrace()
+                logger.error("Error eliminando archivo {}", report.fileUrl, e)
             }
 
             // Eliminar reporte de la base de datos
             reportRepository.deleteById(id)
             true
         } catch (e: Exception) {
-            println("Error eliminando reporte: ${e.message}")
-            e.printStackTrace()
+            logger.error("Error eliminando reporte {}", id, e)
             false
         }
     }
-    
+
     fun getReportById(id: Long): Report? {
         val opt = reportRepository.findById(id)
         return if (opt.isPresent) {
@@ -210,13 +295,10 @@ class ReportService(
             null
         }
     }
-    
 
-    
     fun getReportsByDoctorId(doctorId: Long): List<Report> {
         return reportRepository.findByDoctorIdOrderByDateDesc(doctorId)
     }
-
 
     fun getReportsForDoctor(doctor: AppUser, patientId: Long? = null, specialtyId: Long? = null): List<Report> {
         return when {
@@ -241,15 +323,29 @@ class ReportService(
         return report.doctor.id == doctor.id || report.patient.doctors.contains(doctor)
     }
 
-    private fun isAdmin(user: AppUser): Boolean {
-        return user.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
-    }
-
     // ========================= PAGINATED METHODS =========================
 
     /**
-     * Get all reports with pagination and optional filters (for admins)
+     * Get all reports with pagination, optional filters, and sorting (for admins).
+     * Uses composable JPA Specifications instead of a combinatorial when chain.
      */
+    fun getAllReportsPaginated(
+        patientId: Long? = null,
+        specialtyId: Long? = null,
+        doctorId: Long? = null,
+        title: String? = null,
+        page: Int = 0,
+        size: Int = 10,
+        sortBy: String? = null,
+        sortDirection: String? = null
+    ): Page<Report> {
+        val titleFilter = if (title.isNullOrBlank()) null else title.trim()
+        val spec = buildSpec(titleFilter, patientId, specialtyId, doctorId)
+        val pageable = buildPageable(page, size, sortBy, sortDirection)
+        return reportRepository.findAll(spec, pageable)
+    }
+
+    // Overload for callers that already built a Pageable (backward compat — sort fields ignored)
     fun getAllReportsPaginated(
         patientId: Long? = null,
         specialtyId: Long? = null,
@@ -258,114 +354,50 @@ class ReportService(
         pageable: Pageable
     ): Page<Report> {
         val titleFilter = if (title.isNullOrBlank()) null else title.trim()
-        
-        return when {
-            // All filters
-            titleFilter != null && patientId != null && specialtyId != null && doctorId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndSpecialtyIdAndDoctorIdOrderByDateDesc(titleFilter, patientId, specialtyId, doctorId, pageable)
-            }
-            // Title + 2 other filters
-            titleFilter != null && patientId != null && specialtyId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndSpecialtyIdOrderByDateDesc(titleFilter, patientId, specialtyId, pageable)
-            }
-            titleFilter != null && patientId != null && doctorId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndDoctorIdOrderByDateDesc(titleFilter, patientId, doctorId, pageable)
-            }
-            titleFilter != null && specialtyId != null && doctorId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndSpecialtyIdAndDoctorIdOrderByDateDesc(titleFilter, specialtyId, doctorId, pageable)
-            }
-            // 3 filters without title
-            patientId != null && specialtyId != null && doctorId != null -> {
-                reportRepository.findByPatientIdAndSpecialtyIdAndDoctorIdOrderByDateDesc(patientId, specialtyId, doctorId, pageable)
-            }
-            // Title + 1 other filter
-            titleFilter != null && patientId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdOrderByDateDesc(titleFilter, patientId, pageable)
-            }
-            titleFilter != null && specialtyId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndSpecialtyIdOrderByDateDesc(titleFilter, specialtyId, pageable)
-            }
-            titleFilter != null && doctorId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndDoctorIdOrderByDateDesc(titleFilter, doctorId, pageable)
-            }
-            // 2 filters without title
-            patientId != null && specialtyId != null -> {
-                reportRepository.findByPatientIdAndSpecialtyIdOrderByDateDesc(patientId, specialtyId, pageable)
-            }
-            patientId != null && doctorId != null -> {
-                reportRepository.findByPatientIdAndDoctorIdOrderByDateDesc(patientId, doctorId, pageable)
-            }
-            specialtyId != null && doctorId != null -> {
-                reportRepository.findBySpecialtyIdAndDoctorIdOrderByDateDesc(specialtyId, doctorId, pageable)
-            }
-            // Single filters
-            titleFilter != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseOrderByDateDesc(titleFilter, pageable)
-            }
-            patientId != null -> {
-                reportRepository.findByPatientIdOrderByDateDesc(patientId, pageable)
-            }
-            specialtyId != null -> {
-                reportRepository.findBySpecialtyIdOrderByDateDesc(specialtyId, pageable)
-            }
-            doctorId != null -> {
-                reportRepository.findByDoctorIdOrderByDateDesc(doctorId, pageable)
-            }
-            // No filters
-            else -> {
-                reportRepository.findAllByOrderByDateDesc(pageable)
-            }
-        }
+        val spec = buildSpec(titleFilter, patientId, specialtyId, doctorId)
+        return reportRepository.findAll(spec, pageable)
     }
 
     /**
-     * Get reports for a doctor with pagination and optional filters
+     * Get reports for a doctor with pagination, optional filters, and sorting.
+     * Uses composable JPA Specifications instead of a combinatorial when chain.
      */
     fun getReportsForDoctorPaginated(
-        doctor: AppUser, 
-        patientId: Long? = null, 
+        doctor: AppUser,
+        patientId: Long? = null,
+        specialtyId: Long? = null,
+        doctorId: Long? = null,
+        title: String? = null,
+        page: Int = 0,
+        size: Int = 10,
+        sortBy: String? = null,
+        sortDirection: String? = null
+    ): Page<Report> {
+        val titleFilter = if (title.isNullOrBlank()) null else title.trim()
+        val spec = Specification.where(byPatientOfDoctor(doctor.id))
+            .and(byTitle(titleFilter))
+            .and(byPatientId(patientId))
+            .and(bySpecialtyId(specialtyId))
+            .and(byDoctorId(doctorId))
+        val pageable = buildPageable(page, size, sortBy, sortDirection)
+        return reportRepository.findAll(spec, pageable)
+    }
+
+    // Overload for callers that already built a Pageable (backward compat — sort fields ignored)
+    fun getReportsForDoctorPaginated(
+        doctor: AppUser,
+        patientId: Long? = null,
         specialtyId: Long? = null,
         doctorId: Long? = null,
         title: String? = null,
         pageable: Pageable
     ): Page<Report> {
         val titleFilter = if (title.isNullOrBlank()) null else title.trim()
-        
-        // If doctorId is not specified, default to the current doctor's reports
-        val effectiveDoctorId = doctorId ?: doctor.id
-        
-        return when {
-            // All filters
-            titleFilter != null && patientId != null && specialtyId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndSpecialtyIdAndDoctorIdOrderByDateDesc(titleFilter, patientId, specialtyId, effectiveDoctorId, pageable)
-            }
-            // Title + 1 other filter + doctorId
-            titleFilter != null && patientId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndPatientIdAndDoctorIdOrderByDateDesc(titleFilter, patientId, effectiveDoctorId, pageable)
-            }
-            titleFilter != null && specialtyId != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndSpecialtyIdAndDoctorIdOrderByDateDesc(titleFilter, specialtyId, effectiveDoctorId, pageable)
-            }
-            // 2 filters + doctorId (without title)
-            patientId != null && specialtyId != null -> {
-                reportRepository.findByPatientIdAndSpecialtyIdAndDoctorIdOrderByDateDesc(patientId, specialtyId, effectiveDoctorId, pageable)
-            }
-            // Title + doctorId only
-            titleFilter != null -> {
-                reportRepository.findByTitleContainingIgnoreCaseAndDoctorIdOrderByDateDesc(titleFilter, effectiveDoctorId, pageable)
-            }
-            // Single filter + doctorId
-            patientId != null -> {
-                reportRepository.findByPatientIdAndDoctorIdOrderByDateDesc(patientId, effectiveDoctorId, pageable)
-            }
-            specialtyId != null -> {
-                reportRepository.findBySpecialtyIdAndDoctorIdOrderByDateDesc(specialtyId, effectiveDoctorId, pageable)
-            }
-            // Only doctorId
-            else -> {
-                reportRepository.findByDoctorIdOrderByDateDesc(effectiveDoctorId, pageable)
-            }
-        }
+        val spec = Specification.where(byPatientOfDoctor(doctor.id))
+            .and(byTitle(titleFilter))
+            .and(byPatientId(patientId))
+            .and(bySpecialtyId(specialtyId))
+            .and(byDoctorId(doctorId))
+        return reportRepository.findAll(spec, pageable)
     }
-
 }

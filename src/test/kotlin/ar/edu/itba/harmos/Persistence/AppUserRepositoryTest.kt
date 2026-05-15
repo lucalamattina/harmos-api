@@ -9,9 +9,15 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.assertj.core.api.Assertions.assertThat
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.mail.javamail.JavaMailSender
 
 @DataJpaTest
 class AppUserRepositoryTest {
+
+    // @DataJpaTest loads @Configuration beans including SecurityConfiguration which
+    // transitively needs EmailService → JavaMailSender (not auto-configured in JPA slice).
+    @MockBean private lateinit var javaMailSender: JavaMailSender
 
     @Autowired
     lateinit var entityManager: TestEntityManager
@@ -25,15 +31,15 @@ class AppUserRepositoryTest {
         return specialty
     }
 
-    private fun createAppUser(email: String, specialties: MutableSet<Specialty>): AppUser {
+    private fun createAppUser(email: String, specialty: Specialty? = null): AppUser {
         val user = AppUser(
             email = email,
             password = "password",
             firstName = "John",
             lastName = "Doe",
             phone = "123-456-7890",
-            specialties = specialties,
-            roles = emptySet()
+            specialty = specialty,
+            roles = mutableSetOf()
         )
         entityManager.persist(user)
         return user
@@ -44,9 +50,9 @@ class AppUserRepositoryTest {
         // Given
         val specialty1 = createSpecialty("Cardiología")
         val specialty2 = createSpecialty("Neurología")
-        val user1 = createAppUser("tdorado1@example.com", mutableSetOf(specialty1))
-        createAppUser("otro@example.com", mutableSetOf(specialty2)) // Not used in assertions
-        val user3 = createAppUser("tdorado2@test.com", mutableSetOf(specialty1, specialty2))
+        val user1 = createAppUser("tdorado1@example.com", specialty1)
+        createAppUser("otro@example.com", specialty2)
+        val user3 = createAppUser("tdorado2@test.com", specialty1)
         entityManager.flush()
 
         val pageable: Pageable = PageRequest.of(0, 10)
@@ -69,9 +75,9 @@ class AppUserRepositoryTest {
         // Given
         val specialty1 = createSpecialty("Cardiología")
         val specialty2 = createSpecialty("Neurología")
-        val user1 = createAppUser("user1@example.com", mutableSetOf(specialty1))
-        createAppUser("user2@example.com", mutableSetOf(specialty2)) // Not used in assertions
-        val user3 = createAppUser("user3@test.com", mutableSetOf(specialty1, specialty2))
+        val user1 = createAppUser("user1@example.com", specialty1)
+        createAppUser("user2@example.com", specialty2)
+        val user3 = createAppUser("user3@test.com", specialty1)
         entityManager.flush()
 
         val pageable: Pageable = PageRequest.of(0, 10)
@@ -94,9 +100,9 @@ class AppUserRepositoryTest {
         // Given
         val specialty1 = createSpecialty("Cardiología")
         val specialty2 = createSpecialty("Neurología")
-        val user1 = createAppUser("tdorado1@example.com", mutableSetOf(specialty1))
-        createAppUser("otro@example.com", mutableSetOf(specialty2)) // Not used in assertions
-        val user3 = createAppUser("tdorado2@test.com", mutableSetOf(specialty1, specialty2))
+        val user1 = createAppUser("tdorado1@example.com", specialty1)
+        createAppUser("otro@example.com", specialty2)
+        val user3 = createAppUser("tdorado2@test.com", specialty1)
         entityManager.flush()
 
         val pageable: Pageable = PageRequest.of(0, 10)
@@ -119,8 +125,8 @@ class AppUserRepositoryTest {
         // Given
         val specialty1 = createSpecialty("Cardiología")
         val specialty2 = createSpecialty("Neurología")
-        val user1 = createAppUser("user1@example.com", mutableSetOf(specialty1))
-        val user2 = createAppUser("user2@example.com", mutableSetOf(specialty2))
+        val user1 = createAppUser("user1@example.com", specialty1)
+        val user2 = createAppUser("user2@example.com", specialty2)
         entityManager.flush()
 
         val pageable: Pageable = PageRequest.of(0, 10)
@@ -142,7 +148,7 @@ class AppUserRepositoryTest {
     fun `findAppUsersByEmailAndSpecialties should return empty page when no matching users are found`() {
         // Given
         val specialty1 = createSpecialty("Cardiología")
-        createAppUser("user1@example.com", mutableSetOf(specialty1))
+        createAppUser("user1@example.com", specialty1)
         entityManager.flush()
 
         val pageable: Pageable = PageRequest.of(0, 10)
@@ -164,7 +170,7 @@ class AppUserRepositoryTest {
         // Given
         val specialty = createSpecialty("Traumatología")
         for (i in 1..5) {
-            createAppUser("user$i@example.com", mutableSetOf(specialty))
+            createAppUser("user$i@example.com", specialty)
         }
         entityManager.flush()
 
