@@ -36,6 +36,7 @@ class AppUserService(
 ) {
     private val logger = LoggerFactory.getLogger(AppUserService::class.java)
 
+    @Transactional
     fun createUser(createAppUserRequest: CreateAppUserRequest): AppUser {
         if (appUserRepository.findByEmail(createAppUserRequest.email) != null) {
             throw IllegalArgumentException("El email ya se encuentra registrado")
@@ -70,10 +71,23 @@ class AppUserService(
         return appUserRepository.save(applicationUser)
     }
 
+    @Transactional(readOnly = true)
     fun getAppUserByEmail(email: String): AppUser? {
         return appUserRepository.findByEmail(email)
     }
 
+    /**
+     * Returns the role names for a user inside a transactional boundary so
+     * the LAZY `AppUser.roles` collection can be safely initialized when
+     * called from non-transactional contexts (e.g. servlet filters).
+     */
+    @Transactional(readOnly = true)
+    fun getRoleNamesByEmail(email: String): List<String>? {
+        val user = appUserRepository.findByEmail(email) ?: return null
+        return user.roles.map { it.role }
+    }
+
+    @Transactional(readOnly = true)
     fun getAppUserById(id: Long): AppUser? {
         val opt = appUserRepository.findById(id)
         if (opt.isPresent) {
@@ -82,10 +96,12 @@ class AppUserService(
         return null
     }
 
+    @Transactional(readOnly = true)
     fun findUsersBySpecialties(specialties: List<Specialty>, page: Int, size: Int): List<AppUser> {
         return appUserRepository.findBySpecialtyIn(specialties, PageRequest.of(page, size))
     }
 
+    @Transactional(readOnly = true)
     fun findAppUsersByEmailAndSpecialties(
         email: String?,
         name: String?,

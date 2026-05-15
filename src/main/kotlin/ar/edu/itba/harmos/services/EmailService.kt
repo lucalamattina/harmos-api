@@ -22,6 +22,19 @@ class EmailService @Autowired constructor(
         mailSender.send(message)
     }
 
+    fun sendBatch(recipients: List<String>, template: EmailTemplate) {
+        if (recipients.isEmpty()) return
+        val messages = recipients.map { to ->
+            mailSender.createMimeMessage().also { msg ->
+                val helper = MimeMessageHelper(msg, true, "UTF-8")
+                helper.setTo(to)
+                helper.setSubject(template.subject)
+                helper.setText(template.body, template.isHtml)
+            }
+        }
+        mailSender.send(*messages.toTypedArray())
+    }
+
     fun sendPasswordResetEmail(to: String, resetLink: String) {
         val template = EmailTemplate.passwordReset(resetLink)
         sendEmail(to, template)

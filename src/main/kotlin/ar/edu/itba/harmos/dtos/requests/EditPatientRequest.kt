@@ -13,5 +13,8 @@ data class EditPatientRequest(
     @field:Size(max = 50, message = "Phone must not exceed 50 characters")
     val phone: String?,
 
-    val status: PatientStatus?
+    val status: PatientStatus?,
+
+    // If present, replaces the entire doctors list (empty list removes all doctors).
+    val doctorIds: List<Long>?
 )

@@ -5,6 +5,7 @@ import ar.edu.itba.harmos.dtos.requests.EditReportRequest
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.AppUserRole
 import ar.edu.itba.harmos.models.Notification
+import ar.edu.itba.harmos.models.Patient
 import ar.edu.itba.harmos.models.Report
 import ar.edu.itba.harmos.persistence.ReportRepository
 import org.slf4j.LoggerFactory
@@ -35,7 +36,9 @@ class ReportService(
 
     // ========================= SPECIFICATIONS =========================
 
+    // ====================== Sort whitelist (D.1) ======================
     private val allowedSortFields = setOf("id", "title", "date")
+    private val allowedSortDirections = setOf("asc", "desc")
 
     private fun byTitle(title: String?) = Specification<Report> { root, _, cb ->
         if (title != null) cb.like(cb.lower(root.get("title")), "%${title.lowercase()}%") else null
@@ -53,6 +56,18 @@ class ReportService(
         if (doctorId != null) cb.equal(root.get<Any>("doctor").get<Long>("id"), doctorId) else null
     }
 
+    // Returns reports whose patient is assigned to the given doctor (via patient_doctor join table).
+    private fun byPatientOfDoctor(doctorId: Long?) = Specification<Report> { root, query, cb ->
+        if (doctorId != null) {
+            val subquery = query!!.subquery(Long::class.java)
+            val patientRoot = subquery.from(Patient::class.java)
+            val doctorJoin = patientRoot.join<Patient, AppUser>("doctors")
+            subquery.select(patientRoot.get("id"))
+                .where(cb.equal(doctorJoin.get<Long>("id"), doctorId))
+            root.get<Patient>("patient").get<Long>("id").`in`(subquery)
+        } else null
+    }
+
     private fun buildSpec(
         title: String?,
         patientId: Long?,
@@ -65,14 +80,27 @@ class ReportService(
             .and(byDoctorId(doctorId))
 
     private fun buildPageable(page: Int, size: Int, sortBy: String?, sortDirection: String?): Pageable {
+        // Whitelist sortBy: only id/title/date are accepted; otherwise fall back to date.
         val field = if (sortBy != null && allowedSortFields.contains(sortBy)) sortBy else "date"
-        val direction = try {
-            Sort.Direction.fromString(sortDirection ?: "desc")
-        } catch (e: IllegalArgumentException) {
-            logger.warn("Invalid sortDirection '{}', defaulting to DESC", sortDirection)
+
+        // Whitelist sortDirection: only asc/desc; otherwise fall back to desc.
+        val normalizedDir = sortDirection?.lowercase()
+        val direction = if (normalizedDir != null && allowedSortDirections.contains(normalizedDir)) {
+            Sort.Direction.fromString(normalizedDir)
+        } else {
+            if (sortDirection != null) {
+                logger.warn("Invalid sortDirection '{}', defaulting to DESC", sortDirection)
+            }
             Sort.Direction.DESC
         }
-        return PageRequest.of(page, size, Sort.by(direction, field))
+
+        // Case-insensitive ordering for title (locale-aware via DB collation when LOWER is applied).
+        val order = if (field == "title") {
+            Sort.Order(direction, field).ignoreCase()
+        } else {
+            Sort.Order(direction, field)
+        }
+        return PageRequest.of(page, size, Sort.by(order))
     }
 
     // ========================= CRUD METHODS =========================
@@ -163,8 +191,15 @@ class ReportService(
         var newFileUrl = report.fileUrl
         if (newFile != null && !newFile.isEmpty) {
             try {
-                // Subir el nuevo archivo
-                val uploadedFileUrl = cloudinaryService.uploadDocument(newFile, "reports")
+                // Routing: imágenes (jpg/jpeg/png por MIME) van por uploadImage,
+                // documentos por uploadDocument. La validación AND ya pasó en el controller.
+                val mime = newFile.contentType
+                val isImage = mime == "image/jpeg" || mime == "image/jpg" || mime == "image/png"
+                val uploadedFileUrl = if (isImage) {
+                    cloudinaryService.uploadImage(newFile, "reports")
+                } else {
+                    cloudinaryService.uploadDocument(newFile, "reports")
+                }
                 if (uploadedFileUrl.isBlank()) {
                     throw RuntimeException("Error al subir el nuevo archivo")
                 }
@@ -339,9 +374,11 @@ class ReportService(
         sortDirection: String? = null
     ): Page<Report> {
         val titleFilter = if (title.isNullOrBlank()) null else title.trim()
-        // If doctorId is not specified, default to the current doctor's reports
-        val effectiveDoctorId = doctorId ?: doctor.id
-        val spec = buildSpec(titleFilter, patientId, specialtyId, effectiveDoctorId)
+        val spec = Specification.where(byPatientOfDoctor(doctor.id))
+            .and(byTitle(titleFilter))
+            .and(byPatientId(patientId))
+            .and(bySpecialtyId(specialtyId))
+            .and(byDoctorId(doctorId))
         val pageable = buildPageable(page, size, sortBy, sortDirection)
         return reportRepository.findAll(spec, pageable)
     }
@@ -356,8 +393,11 @@ class ReportService(
         pageable: Pageable
     ): Page<Report> {
         val titleFilter = if (title.isNullOrBlank()) null else title.trim()
-        val effectiveDoctorId = doctorId ?: doctor.id
-        val spec = buildSpec(titleFilter, patientId, specialtyId, effectiveDoctorId)
+        val spec = Specification.where(byPatientOfDoctor(doctor.id))
+            .and(byTitle(titleFilter))
+            .and(byPatientId(patientId))
+            .and(bySpecialtyId(specialtyId))
+            .and(byDoctorId(doctorId))
         return reportRepository.findAll(spec, pageable)
     }
 }

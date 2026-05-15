@@ -73,10 +73,14 @@ class AuthenticationFilter(
         val key = Keys.hmacShaKeyFor(KEY.toByteArray())
         val email = (auth.principal as User).username
         val appUser = appUserService.getAppUserByEmail(email) ?: throw RuntimeException("User not found")
-        
+        // Fetch role names inside a @Transactional boundary to avoid
+        // LazyInitializationException on the LAZY AppUser.roles collection
+        // when this filter runs outside the persistence context.
+        val roleNames = appUserService.getRoleNamesByEmail(email) ?: emptyList()
+
         val claims = Jwts.claims().setSubject(appUser.id.toString())
         claims["email"] = email
-        claims["roles"] = appUser.roles.map { it.role }
+        claims["roles"] = roleNames
         
         val token = Jwts.builder()
             .setClaims(claims)

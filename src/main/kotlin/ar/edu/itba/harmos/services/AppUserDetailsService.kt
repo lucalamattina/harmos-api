@@ -9,10 +9,12 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AppUserDetailsService(val appUserRepository: AppUserRepository) : UserDetailsService {
 
+    @Transactional(readOnly = true)
     override fun loadUserByUsername(email: String): UserDetails {
         val user = appUserRepository.findByEmail(email.lowercase()) ?: throw UsernameNotFoundException(email)
         return User(user.email, user.password, getGrantedAuthorities(user.roles))

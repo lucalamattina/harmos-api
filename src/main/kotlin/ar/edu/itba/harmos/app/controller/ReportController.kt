@@ -23,6 +23,79 @@ class ReportController(
 ) {
     private val logger = LoggerFactory.getLogger(ReportController::class.java)
 
+    // ====================== Upload allowlist (A.1) ======================
+    // Documents: extension+MIME AND-check (mirrors CloudinaryService.isValidDocument).
+    private val allowedDocumentMimeTypes = setOf(
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    )
+    private val allowedDocumentExtensions = setOf(
+        ".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx", ".ppt", ".pptx"
+    )
+    // Images: curated subset for reports (jpg/jpeg/png only).
+    private val allowedImageMimeTypes = setOf("image/jpeg", "image/jpg", "image/png")
+    private val allowedImageExtensions = setOf(".jpg", ".jpeg", ".png")
+
+    private val maxUploadBytes = 25L * 1024L * 1024L // 25MB authoritative server-side limit
+    private val minUploadBytes = 1024L               // 1KB
+
+    private data class FileValidationOk(val isImage: Boolean)
+
+    /**
+     * Validates a multipart file against the reports allowlist using an AND-check
+     * (extension AND MIME must both match the same family). Returns either an OK
+     * marker (with isImage flag for routing to the correct uploader) or a single
+     * error message string suitable for the field-keyed `errors.file` slot.
+     */
+    private fun validateReportFile(file: MultipartFile): Result<FileValidationOk> {
+        val originalFilename = file.originalFilename
+        if (originalFilename.isNullOrBlank()) {
+            return Result.failure(IllegalArgumentException("El archivo debe tener un nombre válido"))
+        }
+        if (file.size > maxUploadBytes) {
+            return Result.failure(IllegalArgumentException("El archivo es muy grande (máximo 25MB)"))
+        }
+        if (file.size < minUploadBytes) {
+            return Result.failure(IllegalArgumentException("El archivo es muy pequeño (mínimo 1KB)"))
+        }
+
+        val filename = originalFilename.lowercase()
+        val mime = file.contentType
+        val docExtMatch = allowedDocumentExtensions.any { filename.endsWith(it) }
+        val docMimeMatch = mime != null && allowedDocumentMimeTypes.contains(mime)
+        val imgExtMatch = allowedImageExtensions.any { filename.endsWith(it) }
+        val imgMimeMatch = mime != null && allowedImageMimeTypes.contains(mime)
+
+        return when {
+            docExtMatch && docMimeMatch -> Result.success(FileValidationOk(isImage = false))
+            imgExtMatch && imgMimeMatch -> Result.success(FileValidationOk(isImage = true))
+            else -> Result.failure(
+                IllegalArgumentException(
+                    "Tipo de archivo no permitido. Formatos permitidos: " +
+                        "PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX, JPG, JPEG, PNG"
+                )
+            )
+        }
+    }
+
+    /**
+     * Routes the file to the correct CloudinaryService uploader based on the validation result.
+     * Both branches go to the `reports` folder.
+     */
+    private fun uploadReportFile(file: MultipartFile, isImage: Boolean): String {
+        return if (isImage) {
+            cloudinaryService.uploadImage(file, "reports")
+        } else {
+            cloudinaryService.uploadDocument(file, "reports")
+        }
+    }
+
     @PostMapping(consumes = ["multipart/form-data"])
     @ResponseBody
     fun createReport(
@@ -37,75 +110,40 @@ class ReportController(
             return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
         }
 
-        // Input validation
-        if (title.isBlank()) {
-            return ResponseEntity(mapOf("error" to "El título es obligatorio y no puede estar vacío"), HttpStatus.BAD_REQUEST)
-        }
+        // ===== Field-keyed validation (E.1) =====
+        val fieldErrors = linkedMapOf<String, String>()
 
-        if (title.length > 255) {
-            return ResponseEntity(mapOf("error" to "El título no puede exceder 255 caracteres"), HttpStatus.BAD_REQUEST)
+        if (title.isBlank()) {
+            fieldErrors["title"] = "El título es obligatorio y no puede estar vacío"
+        } else if (title.length > 255) {
+            fieldErrors["title"] = "El título no puede exceder 255 caracteres"
         }
 
         if (patientId <= 0) {
-            return ResponseEntity(mapOf("error" to "ID del paciente inválido"), HttpStatus.BAD_REQUEST)
+            fieldErrors["patientId"] = "ID del paciente inválido"
         }
 
         if (specialtyId <= 0) {
-            return ResponseEntity(mapOf("error" to "ID de la especialidad inválido"), HttpStatus.BAD_REQUEST)
+            fieldErrors["specialtyId"] = "ID de la especialidad inválido"
         }
 
-        // File validation
         if (file.isEmpty) {
-            return ResponseEntity(mapOf("error" to "El archivo es obligatorio para crear un reporte"), HttpStatus.BAD_REQUEST)
+            fieldErrors["file"] = "El archivo es obligatorio para crear un reporte"
+        } else {
+            val fileValidation = validateReportFile(file)
+            fileValidation.exceptionOrNull()?.let {
+                fieldErrors["file"] = it.message ?: "Archivo no válido"
+            }
         }
 
-        val originalFilename = file.originalFilename
-        if (originalFilename.isNullOrBlank()) {
-            return ResponseEntity(mapOf("error" to "El archivo debe tener un nombre válido"), HttpStatus.BAD_REQUEST)
-        }
-
-        // File size validation (25MB max)
-        if (file.size > 25 * 1024 * 1024) {
-            return ResponseEntity(mapOf("error" to "El archivo es muy grande (máximo 25MB)"), HttpStatus.BAD_REQUEST)
-        }
-
-        // File size minimum validation (1KB min)
-        if (file.size < 1024) {
-            return ResponseEntity(mapOf("error" to "El archivo es muy pequeño (mínimo 1KB)"), HttpStatus.BAD_REQUEST)
-        }
-
-        // File type validation
-        val allowedContentTypes = listOf(
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "text/plain",
-            "image/jpeg",
-            "image/jpg",
-            "image/png"
-        )
-
-        val fileContentType = file.contentType
-        if (fileContentType == null || !allowedContentTypes.contains(fileContentType)) {
-            return ResponseEntity(
-                mapOf("error" to "Tipo de archivo no permitido. Formatos permitidos: PDF, DOC, DOCX, TXT, JPG, JPEG, PNG"),
-                HttpStatus.BAD_REQUEST
-            )
-        }
-
-        // File extension validation
-        val filename = originalFilename.lowercase()
-        val allowedExtensions = listOf(".pdf", ".doc", ".docx", ".txt", ".jpg", ".jpeg", ".png")
-        if (!allowedExtensions.any { filename.endsWith(it) }) {
-            return ResponseEntity(
-                mapOf("error" to "Extensión de archivo no permitida. Extensiones permitidas: ${allowedExtensions.joinToString(", ")}"),
-                HttpStatus.BAD_REQUEST
-            )
+        if (fieldErrors.isNotEmpty()) {
+            return ResponseEntity(mapOf("errors" to fieldErrors), HttpStatus.BAD_REQUEST)
         }
 
         return try {
-            // Subir archivo primero
-            val fileUrl = cloudinaryService.uploadDocument(file, "reports")
+            // Subir archivo primero (routing image vs document)
+            val isImage = validateReportFile(file).getOrThrow().isImage
+            val fileUrl = uploadReportFile(file, isImage)
 
             // Validar que se obtuvo una URL válida
             if (fileUrl.isBlank()) {
@@ -115,8 +153,11 @@ class ReportController(
             // Crear el reporte con el archivo
             val createReportRequest = CreateReportRequest(title.trim(), patientId, specialtyId)
             val report = reportService.createReportWithFile(createReportRequest, appUser, fileUrl)
-                ?: return ResponseEntity(mapOf("error" to "No se pudo crear el reporte. Verifique que el paciente y la especialidad existan"), HttpStatus.BAD_REQUEST)
-            
+                ?: return ResponseEntity(
+                    mapOf("errors" to mapOf("patientId" to "Paciente o especialidad no encontrados")),
+                    HttpStatus.BAD_REQUEST
+                )
+
             ResponseEntity(ReportResponse.singleFromModel(report, cloudinaryService), HttpStatus.CREATED)
         } catch (e: IllegalArgumentException) {
             ResponseEntity(mapOf("error" to "Datos inválidos: ${e.message}"), HttpStatus.BAD_REQUEST)
@@ -298,68 +339,35 @@ class ReportController(
             return ResponseEntity(mapOf("error" to "Solo el doctor que creó el reporte o un administrador puede editarlo"), HttpStatus.FORBIDDEN)
         }
 
-        // Input validation
-        if (title != null && title.isBlank()) {
-            return ResponseEntity(mapOf("error" to "El título no puede estar vacío"), HttpStatus.BAD_REQUEST)
-        }
+        // ===== Field-keyed validation (E.1) =====
+        val fieldErrors = linkedMapOf<String, String>()
 
-        if (title != null && title.length > 255) {
-            return ResponseEntity(mapOf("error" to "El título no puede exceder 255 caracteres"), HttpStatus.BAD_REQUEST)
+        if (title != null) {
+            if (title.isBlank()) {
+                fieldErrors["title"] = "El título no puede estar vacío"
+            } else if (title.length > 255) {
+                fieldErrors["title"] = "El título no puede exceder 255 caracteres"
+            }
         }
 
         if (patientId != null && patientId <= 0) {
-            return ResponseEntity(mapOf("error" to "ID del paciente inválido"), HttpStatus.BAD_REQUEST)
+            fieldErrors["patientId"] = "ID del paciente inválido"
         }
 
         if (specialtyId != null && specialtyId <= 0) {
-            return ResponseEntity(mapOf("error" to "ID de la especialidad inválido"), HttpStatus.BAD_REQUEST)
+            fieldErrors["specialtyId"] = "ID de la especialidad inválido"
         }
 
         // File validation (si se proporciona un archivo)
         if (file != null && !file.isEmpty) {
-            val originalFilename = file.originalFilename
-            if (originalFilename.isNullOrBlank()) {
-                return ResponseEntity(mapOf("error" to "El archivo debe tener un nombre válido"), HttpStatus.BAD_REQUEST)
+            val fileValidation = validateReportFile(file)
+            fileValidation.exceptionOrNull()?.let {
+                fieldErrors["file"] = it.message ?: "Archivo no válido"
             }
+        }
 
-            // File size validation (25MB max)
-            if (file.size > 25 * 1024 * 1024) {
-                return ResponseEntity(mapOf("error" to "El archivo es muy grande (máximo 25MB)"), HttpStatus.BAD_REQUEST)
-            }
-
-            // File size minimum validation (1KB min)
-            if (file.size < 1024) {
-                return ResponseEntity(mapOf("error" to "El archivo es muy pequeño (mínimo 1KB)"), HttpStatus.BAD_REQUEST)
-            }
-
-            // File type validation
-            val allowedContentTypes = listOf(
-                "application/pdf",
-                "application/msword",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "text/plain",
-                "image/jpeg",
-                "image/jpg",
-                "image/png"
-            )
-
-            val fileContentType = file.contentType
-            if (fileContentType == null || !allowedContentTypes.contains(fileContentType)) {
-                return ResponseEntity(
-                    mapOf("error" to "Tipo de archivo no permitido. Formatos permitidos: PDF, DOC, DOCX, TXT, JPG, JPEG, PNG"),
-                    HttpStatus.BAD_REQUEST
-                )
-            }
-
-            // File extension validation
-            val filename = originalFilename.lowercase()
-            val allowedExtensions = listOf(".pdf", ".doc", ".docx", ".txt", ".jpg", ".jpeg", ".png")
-            if (!allowedExtensions.any { filename.endsWith(it) }) {
-                return ResponseEntity(
-                    mapOf("error" to "Extensión de archivo no permitida. Extensiones permitidas: ${allowedExtensions.joinToString(", ")}"),
-                    HttpStatus.BAD_REQUEST
-                )
-            }
+        if (fieldErrors.isNotEmpty()) {
+            return ResponseEntity(mapOf("errors" to fieldErrors), HttpStatus.BAD_REQUEST)
         }
 
         // Validar que al menos un campo se está actualizando

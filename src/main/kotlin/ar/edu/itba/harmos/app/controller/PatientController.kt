@@ -78,9 +78,16 @@ class PatientController(
         @RequestParam(required = false) status: PatientStatus?,
         @RequestParam(required = false) specialty: String?,
         @RequestParam(required = false) doctorId: Long?,
-        pageable: Pageable
-    ): ResponseEntity<Page<PatientResponse>> {
-        val patients = patientService.getPatients(name, doctor, specialty, status, doctorId, pageable)
+        pageable: Pageable,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
+        }
+        val isAdmin = appUser.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+        // Non-admins can only see their own patients; ignore any doctorId param they send.
+        val effectiveDoctorId = if (isAdmin) doctorId else appUser.id
+        val patients = patientService.getPatients(name, doctor, specialty, status, effectiveDoctorId, pageable)
         return ResponseEntity.ok(patients.map { PatientResponse.singleFromModel(it) })
     }
 
@@ -88,12 +95,28 @@ class PatientController(
     fun addDoctorToPatient(@PathVariable patientId: Long, @PathVariable doctorId: Long): ResponseEntity<Any> {
         val patient = patientService.getPatientById(patientId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
         val doctor = appUserService.getAppUserById(doctorId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
-        
+
         if (patient.doctors.contains(doctor)) {
             return ResponseEntity(HttpStatus.NO_CONTENT)
         }
-        
+
         return if (patientService.addDoctorToPatient(patientId, doctorId)) {
+            ResponseEntity(HttpStatus.NO_CONTENT)
+        } else {
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
+
+    @DeleteMapping("/{patientId}/doctors/{doctorId}")
+    fun removeDoctorFromPatient(@PathVariable patientId: Long, @PathVariable doctorId: Long): ResponseEntity<Any> {
+        val patient = patientService.getPatientById(patientId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+        val doctor = appUserService.getAppUserById(doctorId) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+
+        if (!patient.doctors.contains(doctor)) {
+            return ResponseEntity(HttpStatus.NO_CONTENT)
+        }
+
+        return if (patientService.removeDoctorFromPatient(patientId, doctorId)) {
             ResponseEntity(HttpStatus.NO_CONTENT)
         } else {
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
