@@ -116,6 +116,78 @@ fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest)
 
 ---
 
+---
+
+## Bug 5 — `POST /notifications` has no authentication check
+
+**Severity:** Medium (security — unauthenticated creation)  
+**File:** [src/main/kotlin/ar/edu/itba/harmos/app/controller/NotificationController.kt](src/main/kotlin/ar/edu/itba/harmos/app/controller/NotificationController.kt)  
+**Found while:** Writing `NotificationControllerTest`
+
+### Description
+`POST /notifications` (the creation endpoint) does not accept a `@CurrentUser` parameter and therefore has no authentication check. Any caller — including unauthenticated ones — can create notifications for arbitrary users if Spring Security's filter chain does not protect the route. The other endpoints (`GET`, `PATCH`) correctly accept `@CurrentUser` and return 401 when the user is absent.
+
+### Fix
+Add `@CurrentUser appUser: AppUser?` parameter and return 401 if null, consistent with `GET` and `PATCH` handlers. Alternatively, ensure the route is covered by the security filter chain's `authenticated()` rule.
+
+---
+
+## Bug 6 — `validateReportFile` called twice on happy path
+
+**Severity:** Low (performance)  
+**File:** [src/main/kotlin/ar/edu/itba/harmos/app/controller/ReportController.kt](src/main/kotlin/ar/edu/itba/harmos/app/controller/ReportController.kt)  
+**Found while:** Writing `ReportControllerTest`
+
+### Description
+On the report-creation happy path, `validateReportFile(file)` is called once to populate `fieldErrors` and again immediately after to extract the `isImage` flag. Both calls perform the same regex/MIME checks, wasting CPU.
+
+### Fix
+Store the `Result<Boolean>` from the first call in a local variable and reuse it for both the error check and the `isImage` extraction.
+
+---
+
+## Bug 7 — `NotificationService.markAsRead` copies entity instead of mutating it
+
+**Severity:** Low (maintenance hazard)  
+**File:** [src/main/kotlin/ar/edu/itba/harmos/services/NotificationService.kt](src/main/kotlin/ar/edu/itba/harmos/services/NotificationService.kt)  
+**Found while:** Writing `NotificationServiceTest`
+
+### Description
+`markAsRead` creates a NEW `Notification` object (a manual copy with `read = true`) and saves it, rather than setting `read = true` on the existing managed entity and letting JPA flush it. While functionally equivalent today (same ID → UPDATE), if additional fields are added to `Notification` in the future, the manual copy block will silently drop them.
+
+### Fix
+Make `read` a `var` field on `Notification` and mutate it in-place: `notification.read = true; notificationRepository.save(notification)`.
+
+---
+
+## Bug 8 — `ScheduleService.createSchedule` lacks range validation
+
+**Severity:** Low (data integrity)  
+**File:** [src/main/kotlin/ar/edu/itba/harmos/services/ScheduleService.kt](src/main/kotlin/ar/edu/itba/harmos/services/ScheduleService.kt)  
+**Found while:** Writing `ScheduleServiceTest`
+
+### Description
+`createSchedule` does not validate that `hourFrom` is within 0–23 or that the computed `hourTo` stays within 0–23. `@Min`/`@Max` annotations on `CreateScheduleRequest` are only enforced by the MVC layer; callers that bypass the controller (tests, other services) can produce `Schedule` rows with invalid times.
+
+### Fix
+Add explicit range checks in the service method before persisting.
+
+---
+
+## Bug 9 — `ScheduleService` ambiguous error messages
+
+**Severity:** Low (DX/debugging)  
+**File:** [src/main/kotlin/ar/edu/itba/harmos/services/ScheduleService.kt](src/main/kotlin/ar/edu/itba/harmos/services/ScheduleService.kt)  
+**Found while:** Writing `ScheduleServiceTest`
+
+### Description
+When `durationMinutes` is null and `hourTo` is provided but `minuteTo` is null, both the "hourTo missing" and "minuteTo missing" branches emit the same generic message `"Se requiere durationMinutes o hourTo/minuteTo"`. Callers cannot distinguish the two error cases.
+
+### Fix
+Use distinct messages: `"Se requiere minuteTo cuando se provee hourTo"` for the `minuteTo`-missing branch.
+
+---
+
 ## Summary
 
 | # | File | Severity | Status | Impact |
@@ -124,3 +196,8 @@ fun forgotPassword(@RequestBody forgotPasswordRequest: ForgotPasswordRequest)
 | 2 | `ReportService.kt:139` | Medium | Open (manual) | In-app notifications on report creation never fired — requires design decision |
 | 3 | `ForgotPasswordRequest.kt` | Low | **Fixed** | Inconsistent validation — `isValid()` now delegates to `getValidationError()` |
 | 4 | `UserController.kt:129` | Medium | **Fixed** | `@Valid` leaked email-format oracle on `/forgot-password` |
+| 5 | `NotificationController.kt` | Medium | Open | `POST /notifications` has no auth check |
+| 6 | `ReportController.kt` | Low | Open | `validateReportFile` called twice on happy path |
+| 7 | `NotificationService.kt` | Low | Open | `markAsRead` copies entity instead of mutating it |
+| 8 | `ScheduleService.kt` | Low | Open | No range validation for hour fields |
+| 9 | `ScheduleService.kt` | Low | Open | Ambiguous error messages in `createSchedule` |
