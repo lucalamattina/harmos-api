@@ -29,15 +29,16 @@ import javax.servlet.http.HttpServletResponse
 class SecurityConfiguration(
     private val appUserDetailsService: AppUserDetailsService,
     private val appUserService: AppUserService,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    @org.springframework.beans.factory.annotation.Value("\${app.frontend.url}") private val frontendUrl: String
 ) {
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
         configuration.allowedOrigins = listOf(
-            "https://harmos-web-0d62e723abba.herokuapp.com",
-            "http://localhost:3000" // Para desarrollo local
+            frontendUrl,
+            "http://localhost:3000"
         )
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
         configuration.allowedHeaders = listOf("Authorization", "Content-Type", "X-Requested-With")
