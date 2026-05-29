@@ -3,7 +3,7 @@
 ## Overview
 
 The Harmos healthcare management system uses **PostgreSQL** with **Hibernate/JPA** auto-generated schema.
-The database consists of **10 entities**, **4 join tables**, and **2 element collection tables** (16 tables total).
+The database consists of **10 entities**, **3 join tables**, and **2 element collection tables** (15 tables total).
 
 ## Mermaid ERD
 
@@ -16,6 +16,7 @@ erDiagram
         VARCHAR first_name
         VARCHAR last_name
         VARCHAR phone
+        BIGINT specialty_id FK "nullable"
     }
 
     Patients {
@@ -34,6 +35,8 @@ erDiagram
         BIGINT specialty_id FK
         VARCHAR file_url
         TIMESTAMP date
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
     Comments {
@@ -46,7 +49,7 @@ erDiagram
 
     schedule {
         BIGINT id PK
-        VARCHAR day_of_week "ENUM: MONDAY-SUNDAY"
+        INT day_of_week "ORDINAL: MONDAY=0 .. SUNDAY=6"
         INT hour_from
         INT minute_from
         INT hour_to
@@ -70,7 +73,9 @@ erDiagram
         TEXT title
         TEXT content
         TIMESTAMP date
-        BIGINT created_by FK
+        BIGINT created_by_id FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
     notification {
@@ -81,6 +86,8 @@ erDiagram
         BIGINT user_id FK
         BIGINT announcement_id "nullable, no FK constraint"
         BIGINT report_id "nullable, no FK constraint"
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
     password_reset_tokens {
@@ -90,14 +97,9 @@ erDiagram
         TIMESTAMP expiry_date
     }
 
-    app_user_roles {
-        BIGINT user_id FK
-        BIGINT role_id FK
-    }
-
-    user_specialty {
-        BIGINT user_id FK
-        BIGINT specialty_id FK
+    users_roles {
+        BIGINT users_id FK
+        BIGINT roles_id FK
     }
 
     patient_doctor {
@@ -122,11 +124,8 @@ erDiagram
 
     %% ---- M:N Relationships (via join tables) ----
 
-    users ||--o{ user_specialty : "has"
-    specialties ||--o{ user_specialty : "assigned to"
-
-    users ||--o{ app_user_roles : "has"
-    roles ||--o{ app_user_roles : "assigned to"
+    users ||--o{ users_roles : "has"
+    roles ||--o{ users_roles : "assigned to"
 
     Patients ||--o{ patient_doctor : "treated by"
     users ||--o{ patient_doctor : "treats"
@@ -142,6 +141,8 @@ erDiagram
     users ||--o{ schedule : "has schedule"
     users ||--o{ notification : "receives"
     users ||--o{ password_reset_tokens : "requests"
+
+    specialties ||--o{ users : "employs"
 
     Patients ||--o{ Reports : "has"
     Patients ||--o{ schedule : "scheduled in"
@@ -170,12 +171,11 @@ erDiagram
 | 8 | `announcement` | `Announcement` | Entity | Internal announcements with media |
 | 9 | `notification` | `Notification` | Entity | User notifications (soft-references announcements/reports) |
 | 10 | `password_reset_tokens` | `PasswordResetToken` | Entity | Password reset flow tokens |
-| 11 | `app_user_roles` | -- | Join (M:N) | users <-> roles |
-| 12 | `user_specialty` | -- | Join (M:N) | users <-> specialties |
-| 13 | `patient_doctor` | -- | Join (M:N) | patients <-> doctors |
-| 14 | `announcement_specialty` | -- | Join (M:N) | announcements <-> specialties |
-| 15 | `announcement_images` | -- | ElementCollection | Image URLs per announcement |
-| 16 | `announcement_files` | -- | ElementCollection | File URLs per announcement |
+| 11 | `users_roles` | -- | Join (M:N) | users <-> roles |
+| 12 | `patient_doctor` | -- | Join (M:N) | patients <-> doctors |
+| 13 | `announcement_specialty` | -- | Join (M:N) | announcements <-> specialties |
+| 14 | `announcement_images` | -- | ElementCollection | Image URLs per announcement |
+| 15 | `announcement_files` | -- | ElementCollection | File URLs per announcement |
 
 ## Enums
 
@@ -207,7 +207,11 @@ erDiagram
 
 ## Design Notes
 
+- **`users.specialty_id`**: A user has **at most one** specialty via a `@ManyToOne` (`specialty_id` FK on `users`). This is a 1:N relationship (specialty → users), **not** a M:N join table.
 - **`notification.announcement_id` / `notification.report_id`**: These are stored as plain `Long?` columns with **no foreign key constraint**. They act as soft references to allow notifications to link to announcements or reports without cascading deletes.
-- **`schedule.day_of_week`**: Stored as `VARCHAR` via `@Enumerated(EnumType.STRING)` using `java.time.DayOfWeek` values.
+- **`schedule.day_of_week`**: The `dayOfWeek: DayOfWeek` field has **no `@Enumerated` annotation**, so JPA defaults to `EnumType.ORDINAL` — stored as an **`INT`** (`MONDAY=0` … `SUNDAY=6`), not `VARCHAR`.
 - **`Patients.status`**: Stored as `VARCHAR` via `@Enumerated(EnumType.STRING)` using the `PatientStatus` enum.
-- **Schema management**: Hibernate `ddl-auto` is used (no Flyway/Liquibase migrations).
+- **`announcement.created_by_id`**: The `createdBy` `@ManyToOne` has no explicit `@JoinColumn`, so Hibernate derives the column name `created_by_id`.
+- **Audit timestamps**: `Reports`, `announcement`, and `notification` each carry `created_at` (`@CreationTimestamp`) and `updated_at` (`@UpdateTimestamp`) columns.
+- **`users_roles` join table**: The `AppUser.roles` `@ManyToMany` has no `@JoinTable`, so Hibernate derives the table name `users_roles` with join columns `users_id` / `roles_id`.
+- **Schema management**: Hibernate `ddl-auto=create` is used (no Flyway/Liquibase migrations).
