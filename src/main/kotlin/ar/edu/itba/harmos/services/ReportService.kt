@@ -135,18 +135,22 @@ class ReportService(
 
         val savedReport = reportRepository.save(report)
 
-        // Notificar al dueño del reporte (el doctor que lo creó) solo si no es él mismo
-        if (savedReport.doctor.id != doctor.id) {
+        // Notificar a todos los doctores del paciente, excepto a quien creó el reporte
+        val recipients = patient.doctors.filter { it.id != doctor.id }
+        if (recipients.isNotEmpty()) {
             try {
                 val creatorName = "${doctor.firstName} ${doctor.lastName}"
-                val notification = Notification(
-                    message = "Se ha creado un nuevo reporte por $creatorName para tu paciente ${savedReport.patient.firstName} ${savedReport.patient.lastName}: ${savedReport.title}",
-                    user = savedReport.doctor,
-                    reportId = savedReport.id
-                )
-                notificationService.create(notification)
+                val notifications = recipients.map { recipient ->
+                    Notification(
+                        message = "Se ha creado un nuevo reporte por $creatorName para tu paciente ${savedReport.patient.firstName} ${savedReport.patient.lastName}: ${savedReport.title}",
+                        user = recipient,
+                        reportId = savedReport.id
+                    )
+                }
+                notificationService.createBatch(notifications)
+                asyncNotificationService.sendReportCreatedEmailAsync(savedReport, recipients, doctor)
             } catch (e: Exception) {
-                logger.error("Error creating notification for report ${savedReport.id}", e)
+                logger.error("Error creating notifications for report ${savedReport.id}", e)
             }
         }
 

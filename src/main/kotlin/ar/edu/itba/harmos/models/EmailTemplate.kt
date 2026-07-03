@@ -103,6 +103,40 @@ data class EmailTemplate(
             )
         }
 
+        fun reportCreated(
+            reportTitle: String,
+            patientName: String,
+            creatorName: String,
+            link: String
+        ): EmailTemplate {
+            val subject = "Nuevo Reporte: $reportTitle"
+            val body = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: sans-serif; }
+                    .container { padding: 20px; }
+                    .header { font-size: 24px; color: #333; }
+                    .content { margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">Nuevo Reporte</div>
+                    <div class="content">
+                        <p>Hola,</p>
+                        <p>Se ha creado un nuevo reporte "<strong>$reportTitle</strong>" para el paciente <strong>$patientName</strong> por <strong>$creatorName</strong>.</p>
+                        <p>Puedes ver los detalles en el siguiente enlace:</p>
+                        <p><a href="$link">Ver Reporte</a></p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.trimIndent()
+            return EmailTemplate(subject, body, true)
+        }
+
         fun reportModified(
             reportTitle: String,
             patientName: String,

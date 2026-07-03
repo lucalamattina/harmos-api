@@ -94,6 +94,26 @@ class AsyncNotificationService(
     }
 
     @Async("taskExecutor")
+    fun sendReportCreatedEmailAsync(report: Report, recipients: List<AppUser>, creator: AppUser) {
+        logger.debug("Starting async email sending for created report ${report.id} on thread: ${Thread.currentThread().name}")
+        try {
+            if (recipients.isEmpty()) return
+
+            val reportLink = "$frontendUrl/reports/${report.id}"
+            val template = EmailTemplate.reportCreated(
+                reportTitle = report.title,
+                patientName = "${report.patient.firstName} ${report.patient.lastName}",
+                creatorName = "${creator.firstName} ${creator.lastName}",
+                link = reportLink
+            )
+            emailService.sendBatch(recipients.map { it.email }, template)
+            logger.info("Sent report created email to ${recipients.size} recipient(s) for report ${report.id}")
+        } catch (e: Exception) {
+            logger.error("Error sending report created email for report ${report.id}: ${e.message}", e)
+        }
+    }
+
+    @Async("taskExecutor")
     fun sendReportModifiedEmailAsync(report: Report, editor: AppUser) {
         logger.debug("Starting async email sending for modified report ${report.id} on thread: ${Thread.currentThread().name}")
         try {
