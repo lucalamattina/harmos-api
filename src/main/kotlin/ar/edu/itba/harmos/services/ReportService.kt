@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class ReportService(
@@ -32,6 +33,13 @@ class ReportService(
 
     fun isAdmin(user: AppUser): Boolean {
         return user.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+    }
+
+    /** True when the doctor is assigned to the patient; false when they aren't or the patient doesn't exist. */
+    @Transactional(readOnly = true)
+    fun isDoctorAssignedToPatient(doctor: AppUser, patientId: Long): Boolean {
+        val patient = patientService.getPatientById(patientId) ?: return false
+        return patient.doctors.any { it.id == doctor.id }
     }
 
     // ========================= SPECIFICATIONS =========================

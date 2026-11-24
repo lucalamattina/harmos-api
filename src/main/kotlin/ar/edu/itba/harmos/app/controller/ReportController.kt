@@ -550,10 +550,23 @@ class ReportController(
             return ResponseEntity(mapOf("error" to "El tamaño de página debe estar entre 1 y 100"), HttpStatus.BAD_REQUEST)
         }
 
+        // Admins see every report. Doctors only see reports for patients they are assigned to,
+        // the same rule as GET /reports/{id} and GET /reports/{id}/file.
+        val isAdmin = reportService.isAdmin(appUser)
+        if (!isAdmin && patientId != null && !reportService.isDoctorAssignedToPatient(appUser, patientId)) {
+            return ResponseEntity(mapOf("error" to "No tienes acceso a este paciente"), HttpStatus.FORBIDDEN)
+        }
+
         return try {
-            val reportsPage = reportService.getAllReportsPaginated(
-                patientId, specialtyId, doctorId, title, page, size, sortBy, sortDirection
-            )
+            val reportsPage = if (isAdmin) {
+                reportService.getAllReportsPaginated(
+                    patientId, specialtyId, doctorId, title, page, size, sortBy, sortDirection
+                )
+            } else {
+                reportService.getReportsForDoctorPaginated(
+                    appUser, patientId, specialtyId, doctorId, title, page, size, sortBy, sortDirection
+                )
+            }
 
             if (reportsPage.isEmpty) {
                 val filters = mutableListOf<String>()

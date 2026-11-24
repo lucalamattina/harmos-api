@@ -63,7 +63,17 @@ class PatientController(
     }
 
     @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
+    fun delete(
+        @PathVariable id: Long,
+        @CurrentUser appUser: AppUser?
+    ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+        val isAdmin = appUser.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+        if (!isAdmin) {
+            return ResponseEntity(mapOf("error" to "Forbidden: only administrators can delete patients"), HttpStatus.FORBIDDEN)
+        }
         return if (patientService.deletePatientById(id)) {
             ResponseEntity(HttpStatus.NO_CONTENT)
         } else {
@@ -84,10 +94,9 @@ class PatientController(
         if (appUser == null) {
             return ResponseEntity(mapOf("error" to "Usuario no autenticado"), HttpStatus.UNAUTHORIZED)
         }
-        val isAdmin = appUser.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
-        // Non-admins can only see their own patients; ignore any doctorId param they send.
-        val effectiveDoctorId = if (isAdmin) doctorId else appUser.id
-        val patients = patientService.getPatients(name, doctor, specialty, status, effectiveDoctorId, pageable)
+        // Every authenticated user (admins and doctors) can list all patients.
+        // Pass doctorId to narrow the list to a single doctor's patients.
+        val patients = patientService.getPatients(name, doctor, specialty, status, doctorId, pageable)
         return ResponseEntity.ok(patients.map { PatientResponse.singleFromModel(it) })
     }
 
@@ -126,8 +135,16 @@ class PatientController(
     @PutMapping("/{id}")
     fun updatePatient(
         @PathVariable id: Long,
-        @Valid @RequestBody editRequest: EditPatientRequest
+        @Valid @RequestBody editRequest: EditPatientRequest,
+        @CurrentUser appUser: AppUser?
     ): ResponseEntity<Any> {
+        if (appUser == null) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+        val isAdmin = appUser.roles.any { it.role == AppUserRole.ADMINISTRATOR.roleName }
+        if (!isAdmin) {
+            return ResponseEntity(mapOf("error" to "Forbidden: only administrators can edit patients"), HttpStatus.FORBIDDEN)
+        }
         return try {
             val updatedPatient = patientService.updatePatient(id, editRequest)
             ResponseEntity.ok(PatientResponse.singleFromModel(updatedPatient))
