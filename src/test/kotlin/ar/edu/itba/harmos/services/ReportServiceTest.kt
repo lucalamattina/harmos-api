@@ -2,6 +2,8 @@ package ar.edu.itba.harmos.services
 
 import ar.edu.itba.harmos.models.AppUser
 import ar.edu.itba.harmos.models.AppUserRole
+import ar.edu.itba.harmos.models.Patient
+import ar.edu.itba.harmos.models.PatientStatus
 import ar.edu.itba.harmos.models.Report
 import ar.edu.itba.harmos.models.Role
 import ar.edu.itba.harmos.persistence.ReportRepository
@@ -149,5 +151,37 @@ class ReportServiceTest {
 
         val order = capturePageable().value.sort.getOrderFor("date")
         assertThat(order?.direction).isEqualTo(Sort.Direction.DESC)
+    }
+
+    // ========================= isDoctorAssignedToPatient =========================
+
+    private fun doctorWithId(id: Long) = AppUser(
+        email = "doc$id@test.com", password = "x", firstName = "Doc", lastName = "$id", phone = "0",
+        roles = mutableSetOf(Role(role = AppUserRole.DOCTOR.roleName, id = 2L)),
+        id = id
+    )
+
+    @Test
+    fun `isDoctorAssignedToPatient is true when the doctor is in the patient's doctors`() {
+        val doctor = doctorWithId(5L)
+        val patient = Patient("P", "L", "555", PatientStatus.ACTIVE, mutableListOf(doctorWithId(5L)), emptyList(), 7L)
+        `when`(patientService.getPatientById(7L)).thenReturn(patient)
+
+        assertThat(service.isDoctorAssignedToPatient(doctor, 7L)).isTrue()
+    }
+
+    @Test
+    fun `isDoctorAssignedToPatient is false when the doctor is not assigned`() {
+        val patient = Patient("P", "L", "555", PatientStatus.ACTIVE, mutableListOf(doctorWithId(6L)), emptyList(), 7L)
+        `when`(patientService.getPatientById(7L)).thenReturn(patient)
+
+        assertThat(service.isDoctorAssignedToPatient(doctorWithId(5L), 7L)).isFalse()
+    }
+
+    @Test
+    fun `isDoctorAssignedToPatient is false when the patient does not exist`() {
+        `when`(patientService.getPatientById(7L)).thenReturn(null)
+
+        assertThat(service.isDoctorAssignedToPatient(doctorWithId(5L), 7L)).isFalse()
     }
 }

@@ -80,7 +80,8 @@ class SecurityConfiguration(
             .antMatchers(HttpMethod.POST, "/users/reset-password").permitAll()
             // Permitir POST en /reports para cualquier usuario autenticado
             .antMatchers(HttpMethod.POST, "/reports").authenticated()
-            // Permitir a todos los usuarios autenticados ver todos los reportes
+            // Cualquier usuario autenticado puede llamar a /reports/all; el controlador limita
+            // a los doctores a los reportes de sus pacientes asignados
             .antMatchers(HttpMethod.GET, "/reports/all").authenticated()
             // Solo los POST y DELETE requieren rol de administrador
             .antMatchers(HttpMethod.POST, "/users").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
@@ -89,6 +90,11 @@ class SecurityConfiguration(
             .antMatchers(HttpMethod.POST, "/specialties").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.POST, "/schedules").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .antMatchers(HttpMethod.DELETE, "/schedules/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            // Solo los administradores pueden crear, editar y eliminar pacientes
+            .antMatchers(HttpMethod.POST, "/patients").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            .antMatchers(HttpMethod.PUT, "/patients/*").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
+            // Cubre la eliminación de pacientes y la desasignación de doctores (/patients/*/doctors/*)
+            .antMatchers(HttpMethod.DELETE, "/patients/**").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             // Restringir la asignación de doctores a pacientes solo a administradores
             .antMatchers(HttpMethod.POST, "/patients/*/doctors/*").hasAuthority(AppUserRole.ADMINISTRATOR.roleName)
             .anyRequest().authenticated()
